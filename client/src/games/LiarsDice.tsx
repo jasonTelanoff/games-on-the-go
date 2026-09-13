@@ -156,7 +156,8 @@ function TurnControls({ view, playerId, sendAction }: {
   const chosen = clampedQty !== null && face !== null;
   const legal = chosen && isLegalBid(pseudoState(view), playerId, clampedQty, face);
 
-  // Each tap adds one die; the first tap starts at the lowest valid count.
+  // One die button: each tap adds a die, the first tap starts at the
+  // lowest valid count. The number of taps dictates the count.
   const tapQty = () => setQty((q) => (q === null ? lowestValid : Math.min(max, q + 1)));
 
   return (
@@ -172,20 +173,17 @@ function TurnControls({ view, playerId, sendAction }: {
           </button>
         )}
       </div>
-      <div className="flex gap-1.5 flex-wrap my-3" role="group" aria-label="Bid quantity — tap to add dice">
-        {Array.from({ length: max }, (_, i) => {
-          const on = clampedQty !== null && i < clampedQty;
-          return (
-            <button
-              key={i}
-              onClick={tapQty}
-              aria-label="Add a die to the bid"
-              className={'rounded-lg p-1 transition-opacity ' + (on ? '' : 'opacity-25')}
-            >
-              <Die size="sm" value={face ?? 1} />
-            </button>
-          );
-        })}
+      <div className="flex items-center gap-4 my-3">
+        <button
+          onClick={tapQty}
+          aria-label="Tap to add a die to your bid"
+          className="rounded-2xl p-2 transition-transform active:scale-95"
+        >
+          <Die size="lg" value={face ?? 1} />
+        </button>
+        <span className="text-[34px] font-bold tabular-nums">
+          {clampedQty ?? <span className="text-muted">–</span>}
+        </span>
       </div>
       <div className="flex gap-2 my-3">
         {([2, 3, 4, 5, 6] as BidFace[]).map((f) => (
@@ -205,7 +203,7 @@ function TurnControls({ view, playerId, sendAction }: {
         <Hint className="text-center">That bid doesn’t beat the current one.</Hint>
       )}
       {!chosen && (
-        <Hint className="text-center">Tap the dice to set the count, then pick a face.</Hint>
+        <Hint className="text-center">Tap the die to set the count, then pick a face.</Hint>
       )}
 
       <StickyBar>
