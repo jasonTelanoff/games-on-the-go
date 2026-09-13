@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import type { ClientMessage, ServerMessage } from '../../src/framework.js';
 import type { PlayerView } from '../../src/games/liars-dice/engine.js';
 import ConnectScreen from './screens/ConnectScreen.js';
@@ -6,10 +6,21 @@ import LobbyScreen from './screens/LobbyScreen.js';
 import { GAME_COMPONENTS, GAME_NAMES } from './games/index.js';
 import type { AppState } from './types.js';
 
-/** Same-origin websocket: the page and the game server are one process. */
+/** Dev-only UI playground (?dev): mock views, no server. Never loaded in prod. */
+const DevPlayground = lazy(() => import('./dev/DevPlayground.js'));
+function useDevPlayground(): boolean {
+  return (
+    import.meta.env.DEV &&
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has('dev')
+  );
+}
+
+/** Same-origin websocket: the page and the game server are one process.
+ *  In dev, Vite proxies /ws to the game server. */
 function serverWsUrl(): string {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  return `${proto}://${location.host}`;
+  return `${proto}://${location.host}/ws`;
 }
 
 const initial: AppState = {
@@ -26,6 +37,16 @@ const initial: AppState = {
 };
 
 export default function App() {
+  const dev = useDevPlayground();
+  // Static for the life of the page, so the early return is hooks-safe.
+  if (dev) {
+    return (
+      <Suspense fallback={null}>
+        <DevPlayground />
+      </Suspense>
+    );
+  }
+
   const [state, setState] = useState<AppState>(initial);
   const wsRef = useRef<WebSocket | null>(null);
   const isHost = state.hostId !== null && state.hostId === state.playerId;

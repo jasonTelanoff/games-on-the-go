@@ -1,1 +1,35 @@
-{"dependencies":{"react":"^19.1.0","react-dom":"^19.1.0","ws":"^8.18.0"},"description":"Local-multiplayer party game platform. One Node server, phones as clients.","devDependencies":{"@types/node":"^22.0.0","@types/react":"^19.1.0","@types/react-dom":"^19.1.0","@types/ws":"^8.5.0","@vitejs/plugin-react":"^4.3.0","typescript":"^5.9.0","vite":"^6.0.0"},"name":"party-games","private":true,"scripts":{"build":"npm run build:server && npm run build:client","build:client":"vite build --config client/vite.config.ts","build:server":"tsc -p tsconfig.json","clean":"rm -rf dist public","serve":"npm run build && node dist/server/index.js","test":"npm run build:server && node --test \"dist/**/*.test.js\""},"type":"module","version":"0.3.0"}
+{
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "ws": "^8.18.0"
+  },
+  "description": "Local-multiplayer party game platform. One Node server, phones as clients.",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/ws": "^8.5.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.9.0",
+    "vite": "^6.0.0",
+    "tsx": "^4.0.0",
+    "concurrently": "^9.0.0"
+  },
+  "name": "party-games",
+  "private": true,
+  "scripts": {
+    "build": "npm run build:server && npm run build:client",
+    "build:client": "vite build --config client/vite.config.ts",
+    "build:server": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist public",
+    "serve": "npm run build && node dist/server/index.js",
+    "test": "npm run build:server && node --test \"dist/**/*.test.js\"",
+    "dev": "concurrently -k -n server,client \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "tsx watch src/server/index.ts",
+    "dev:client": "vite --config client/vite.config.ts",
+    "typecheck:client": "tsc --noEmit -p client/tsconfig.json"
+  },
+  "type": "module",
+  "version": "0.3.0"
+}

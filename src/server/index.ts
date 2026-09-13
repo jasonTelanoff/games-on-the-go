@@ -76,7 +76,7 @@ export async function startServer(port: number): Promise<RunningServer> {
       res.end('server error');
     });
   });
-  const wss = new WebSocketServer({ server: httpServer });
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 
   const send = (c: Conn, msg: ServerMessage): void => {
     if (c.ws.readyState === WebSocket.OPEN) {

@@ -51,6 +51,21 @@ npm run serve   # build + start on http://localhost:8080 (PORT=xxxx to change)
 
 Open two browser tabs at http://localhost:8080 to play against yourself.
 
+### Dev mode (UI iteration)
+
+```sh
+npm run dev   # game server (auto-restart) + Vite dev server with hot reload
+```
+
+Open `http://localhost:5173` — the page comes from Vite, websocket
+traffic is proxied to the game server.
+
+For UI work with no server and no second player, open
+`http://localhost:5173/?dev`: a playground rendering every game screen
+against hand-built mock states (my turn, their turn, challenge reveal,
+paused, game over…) plus the lobby. Clicks log the action they'd send
+instead of sending it. Scenarios live in `client/src/dev/mocks.ts`.
+
 ## Design notes
 
 - The engine is pure: `(state, playerId, action, rand?) -> { state, events }`.
