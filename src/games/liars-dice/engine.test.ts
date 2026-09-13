@@ -165,6 +165,21 @@ test('continue: only players in the game can continue, and only once', () => {
   assert.throws(() => applyAction(s3, 'a', { type: 'continue' }), IllegalActionError);
 });
 
+test('bid history accumulates during the round and resets on continue', () => {
+  let s = createGame(['a', 'b'], rigged([3]));
+  s = applyAction(s, 'a', bid('a', 1, 2)).state;
+  s = applyAction(s, 'b', bid('b', 2, 2)).state;
+  assert.deepEqual(s.bidHistory, [
+    { playerId: 'a', quantity: 1, face: 2 },
+    { playerId: 'b', quantity: 2, face: 2 },
+  ]);
+  assert.equal(getView(s, 'a').bidHistory.length, 2);
+  s = applyAction(s, 'a', { type: 'challenge' }).state;
+  s = applyAction(s, 'a', { type: 'continue' }, rigged([3])).state;
+  assert.deepEqual(s.bidHistory, []);
+  assert.deepEqual(getView(s, 'a').bidHistory, []);
+});
+
 test('views hide other players dice', () => {
   const s0 = createGame(['a', 'b'], rigged([4, 4, 2, 3, 5, 4, 1, 2, 3, 6]));
   const view = getView(s0, 'a');

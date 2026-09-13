@@ -51,6 +51,8 @@ export interface GameState {
   /** Index into players of the player whose action is expected. */
   turnIndex: number;
   currentBid: Bid | null;
+  /** Every bid placed this round, in order. Reset each round. */
+  bidHistory: Bid[];
   round: number;
   lastChallenge: ChallengeResult | null;
   winnerId: string | null;
@@ -87,6 +89,7 @@ export function createGame(playerIds: string[], rand: Rand = Math.random): GameS
     })),
     turnIndex: 0,
     currentBid: null,
+    bidHistory: [],
     round: 1,
     lastChallenge: null,
     winnerId: null,
@@ -165,6 +168,7 @@ export function applyAction(
     const next: GameState = {
       ...state,
       currentBid: bid,
+      bidHistory: [...state.bidHistory, bid],
       turnIndex: (state.turnIndex + 1) % state.players.length,
     };
     return { state: next, events: [{ type: 'bidPlaced', bid }] };
@@ -233,6 +237,7 @@ function continueFromReveal(state: GameState, rand: Rand): ActionResult {
       players,
       turnIndex: 0,
       currentBid: null,
+      bidHistory: [],
       round: state.round,
       lastChallenge: result,
       winnerId: players[0].id,
@@ -251,6 +256,7 @@ function continueFromReveal(state: GameState, rand: Rand): ActionResult {
     })),
     turnIndex: loserPos % players.length,
     currentBid: null,
+    bidHistory: [],
     round: state.round + 1,
     lastChallenge: result,
     winnerId: null,
@@ -270,6 +276,8 @@ export interface PlayerView {
   players: { id: string; diceCount: number }[];
   turnPlayerId: string | null;
   currentBid: Bid | null;
+  /** Every bid placed this round, in order. */
+  bidHistory: Bid[];
   round: number;
   lastChallenge: ChallengeResult | null;
   winnerId: string | null;
@@ -284,6 +292,7 @@ export function getView(state: GameState, playerId: string): PlayerView {
     players: state.players.map((p) => ({ id: p.id, diceCount: p.dice.length })),
     turnPlayerId: state.phase === 'bidding' ? currentPlayerId(state) : null,
     currentBid: state.currentBid,
+    bidHistory: state.currentBid ? [...state.bidHistory] : [],
     round: state.round,
     lastChallenge: state.lastChallenge,
     winnerId: state.winnerId,

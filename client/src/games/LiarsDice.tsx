@@ -21,6 +21,7 @@ import {
   StickyBar,
   TopBar,
 } from '../components/ui.js';
+import { dieGlyph } from '../ui.js';
 
 function totalDice(v: PlayerView): number {
   return v.players.reduce((n, p) => n + p.diceCount, 0);
@@ -32,6 +33,7 @@ function pseudoState(v: PlayerView): GameState {
     players: v.players.map((p) => ({ id: p.id, dice: new Array(p.diceCount).fill(1) })),
     turnIndex: Math.max(0, v.players.findIndex((p) => p.id === v.turnPlayerId)),
     currentBid: v.currentBid,
+    bidHistory: v.bidHistory,
     round: v.round,
     lastChallenge: v.lastChallenge,
     winnerId: v.winnerId,
@@ -271,6 +273,15 @@ export default function LiarsDiceGame({
                   {v.currentBid.quantity} × <Die value={v.currentBid.face} />
                 </div>
                 <div className="text-muted text-[14px] mt-2">bid by {who(v.currentBid.playerId)}</div>
+                {v.bidHistory.length > 1 && (
+                  <div className="mt-3 space-y-1">
+                    {v.bidHistory.slice(0, -1).map((b, i) => (
+                      <div className="text-[13px] text-muted" key={i}>
+                        {who(b.playerId)} · {b.quantity}×{dieGlyph(b.face)}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             ) : (
               <div className="text-muted text-[16px]">No bid yet — open the bidding</div>

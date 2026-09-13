@@ -35,6 +35,7 @@ function base(over: Partial<PlayerView>): PlayerView {
     ],
     turnPlayerId: ANA,
     currentBid: null,
+    bidHistory: [],
     round: 1,
     lastChallenge: null,
     winnerId: null,
@@ -64,6 +65,11 @@ export const LIARS_DICE_SCENARIOS: DevScenario[] = [
     view: base({
       turnPlayerId: ANA,
       currentBid: { playerId: CAT, quantity: 7, face: 6 },
+      bidHistory: [
+        { playerId: ANA, quantity: 5, face: 6 },
+        { playerId: BEN, quantity: 6, face: 4 },
+        { playerId: CAT, quantity: 7, face: 6 },
+      ],
     }),
     isHost: true,
     paused: false,
