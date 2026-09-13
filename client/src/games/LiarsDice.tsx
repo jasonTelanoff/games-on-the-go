@@ -289,9 +289,11 @@ export default function LiarsDiceGame({
           </div>
 
           <Label>Your dice</Label>
-          <div className="flex gap-2.5 justify-center flex-wrap py-2">
+          <div className="flex gap-2.5 justify-center flex-wrap py-2" key={v.round}>
             {v.yourDice.map((d, i) => (
-              <Die size="lg" value={d} key={i} />
+              <span className="animate-dice-tumble inline-block" style={{ animationDelay: `${i * 60}ms` }} key={i}>
+                <Die size="lg" value={d} />
+              </span>
             ))}
           </div>
 
