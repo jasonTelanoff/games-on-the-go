@@ -58,7 +58,7 @@ export function Button({
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cx('bg-card border border-line rounded-[14px] p-5 mb-4', className)}>
+    <div className={cx('bg-card rounded-[14px] p-5 mb-4', className)}>
       {children}
     </div>
   );
@@ -117,7 +117,7 @@ export function Field(props: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       className={cx(
-        'w-full p-3.5 text-[17px] rounded-[10px] border border-line bg-deep text-ink mb-1',
+        'w-full p-3.5 text-[17px] rounded-[10px] bg-deep text-ink mb-4',
         className,
       )}
       {...rest}

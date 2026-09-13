@@ -2,13 +2,13 @@
 
 /* Party Games theme — dark, mobile-first. Jason's tweaked colors live here. */
 @theme {
-  --color-night: #282a2c;
+  --color-night: #121313;
   --color-ink: #eef0f3;
   --color-muted: #9aa3b2;
-  --color-card: #1d2226;
+  --color-card: #1f2023;
   --color-deep: #12141a;
   --color-line: #2c313a;
-  --color-accent: #4f7cff;
+  --color-accent: #1e4cd7;
   --color-accent-soft: #7ea2ff;
   --color-danger: #b3402e;
   --color-warn-bg: #3a2b1a;
