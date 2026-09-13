@@ -192,8 +192,9 @@ export default function LiarsDiceGame({
                   <span className={'rounded-full p-0.5 ' + (active ? 'ring-2 ring-accent' : '')}>
                     <Avatar id={avatars[p.id]} />
                   </span>
-                  <span className={'text-[13px] max-w-[72px] truncate mt-1 ' + (active ? 'font-semibold text-ink' : 'text-muted')}>
+                  <span className={'text-[13px] max-w-[80px] truncate mt-1 ' + (active ? 'font-semibold text-ink' : 'text-muted')}>
                     {who(p.id)}
+                    {p.id === playerId && <span className="text-muted font-normal"> · you</span>}
                   </span>
                   <span className="text-[12px] text-muted mt-0.5 tabular-nums">🎲 {p.diceCount}</span>
                 </div>
