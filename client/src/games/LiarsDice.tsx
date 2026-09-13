@@ -97,8 +97,8 @@ function RevealScreen({ result, names, playerId, sendAction }: {
       <div className="text-center py-4">
         <div className="text-[15px] text-muted mb-2">
           {who(result.challengerId)} called {isExact ? 'Exact!' : 'Liar!'}</div>
-        <div className="text-[34px] font-bold tracking-tight leading-none inline-flex items-center gap-2">
-          {result.bid.quantity} × <Die value={result.bid.face} />
+        <div className="text-[30px] font-bold tracking-tight leading-none inline-flex items-center gap-2">
+          {result.bid.quantity} × <Die size="sm" value={result.bid.face} />
         </div>
         <div className="text-muted text-[14px] mt-2">
           Actual: {result.actualCount} <span className="text-muted/70">(ones are wild)</span>
@@ -108,16 +108,16 @@ function RevealScreen({ result, names, playerId, sendAction }: {
       <Divider className="my-3" />
 
       {result.revealed.map((row) => (
-        <div className="flex justify-between items-center py-1.5" key={row.playerId}>
+        <div className="py-2" key={row.playerId}>
           <span className={'text-[15px] ' + (row.playerId === playerId ? 'font-semibold text-ink' : 'text-muted')}>
             {who(row.playerId)}
             {row.playerId === playerId && <span className="text-muted font-normal"> · you</span>}
           </span>
-          <span className="flex gap-1">
+          <div className="flex gap-1 flex-wrap mt-1.5">
             {row.dice.map((d, i) => (
               <Die size="sm" value={d} key={i} />
             ))}
-          </span>
+          </div>
         </div>
       ))}
 
@@ -289,8 +289,8 @@ export default function LiarsDiceGame({
           <div className="text-center py-5">
             {v.currentBid ? (
               <>
-                <div className="text-[44px] font-bold tracking-tight leading-none">
-                  {v.currentBid.quantity} × <Die value={v.currentBid.face} />
+                <div className="text-[30px] font-bold tracking-tight leading-none inline-flex items-center gap-2">
+                  {v.currentBid.quantity} × <Die size="sm" value={v.currentBid.face} />
                 </div>
                 <div className="text-muted text-[14px] mt-2">bid by {who(v.currentBid.playerId)}</div>
                 {v.bidHistory.length > 1 && (
