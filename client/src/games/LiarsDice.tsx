@@ -16,7 +16,6 @@ import {
   Hint,
   Label,
   Notice,
-  Row,
   Screen,
   StickyBar,
   TopBar,
@@ -149,27 +148,45 @@ function TurnControls({ view, playerId, sendAction }: {
   sendAction: (action: unknown) => void;
 }) {
   const max = totalDice(view);
-  // Nothing pre-selected: the player picks a quantity and a face.
+  // Nothing pre-selected: the player taps dice to set the quantity, then picks a face.
+  const lowestValid = view.currentBid ? view.currentBid.quantity : 1;
   const [qty, setQty] = useState<number | null>(null);
   const [face, setFace] = useState<BidFace | null>(null);
   const clampedQty = qty === null ? null : Math.min(Math.max(1, qty), max);
   const chosen = clampedQty !== null && face !== null;
   const legal = chosen && isLegalBid(pseudoState(view), playerId, clampedQty, face);
 
+  // Each tap adds one die; the first tap starts at the lowest valid count.
+  const tapQty = () => setQty((q) => (q === null ? lowestValid : Math.min(max, q + 1)));
+
   return (
     <>
-      <Label>Your bid</Label>
-      <Row className="justify-center my-3">
-        <div className="w-[52px] shrink-0">
-          <Button size="sm" className="text-[22px]" onClick={() => setQty((q) => Math.max(1, (q ?? 2) - 1))}>−</Button>
-        </div>
-        <span className="w-16 text-center text-[30px] font-bold tabular-nums">
-          {clampedQty ?? <span className="text-muted">–</span>}
-        </span>
-        <div className="w-[52px] shrink-0">
-          <Button size="sm" className="text-[22px]" onClick={() => setQty((q) => Math.min(max, (q ?? 0) + 1))}>+</Button>
-        </div>
-      </Row>
+      <div className="flex items-center justify-between">
+        <Label>Your bid</Label>
+        {clampedQty !== null && (
+          <button
+            className="text-[13px] text-muted underline underline-offset-2 px-2 py-1"
+            onClick={() => setQty(null)}
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      <div className="flex gap-1.5 flex-wrap my-3" role="group" aria-label="Bid quantity — tap to add dice">
+        {Array.from({ length: max }, (_, i) => {
+          const on = clampedQty !== null && i < clampedQty;
+          return (
+            <button
+              key={i}
+              onClick={tapQty}
+              aria-label="Add a die to the bid"
+              className={'rounded-lg p-1 transition-opacity ' + (on ? '' : 'opacity-25')}
+            >
+              <Die size="sm" value={face ?? 1} />
+            </button>
+          );
+        })}
+      </div>
       <div className="flex gap-2 my-3">
         {([2, 3, 4, 5, 6] as BidFace[]).map((f) => (
           <Button
@@ -188,10 +205,7 @@ function TurnControls({ view, playerId, sendAction }: {
         <Hint className="text-center">That bid doesn’t beat the current one.</Hint>
       )}
       {!chosen && (
-        <Hint className="text-center">Pick a quantity and a face.</Hint>
-      )}
-      {view.currentBid && (
-        <Hint className="text-center">Exact: nail the count and everyone else loses a die — miss, and you lose one.</Hint>
+        <Hint className="text-center">Tap the dice to set the count, then pick a face.</Hint>
       )}
 
       <StickyBar>
