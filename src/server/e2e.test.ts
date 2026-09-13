@@ -24,7 +24,7 @@ interface TestClient {
 
 async function connect(port: number): Promise<TestClient> {
   const c: TestClient = {
-    ws: new WebSocket(`ws://localhost:${port}`),
+    ws: new WebSocket(`ws://localhost:${port}/ws`),
     playerId: '',
     isHost: false,
     hostId: null,
