@@ -21,7 +21,7 @@ type ButtonSize = 'md' | 'sm' | 'face';
 
 const BUTTON_BASE =
   'font-semibold text-ink cursor-pointer transition-colors select-none ' +
-  'disabled:opacity-40 disabled:cursor-default';
+  'disabled:opacity-40 disabled:cursor-default w-full';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary: 'bg-accent text-white active:brightness-110',

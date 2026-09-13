@@ -6,13 +6,12 @@ export default function ConnectScreen({ onJoin }: { onJoin: (name: string) => vo
   const join = () => onJoin(name);
 
   return (
-    <Screen className="min-h-[85dvh] flex flex-col justify-center">
-      <div className="text-[13px] font-semibold uppercase tracking-[0.14em] text-muted mb-3">
-        Games on the go
-      </div>
-      <Title>Party Games</Title>
-      <Sub>Your phone is the controller.</Sub>
+    <Screen className="h-full flex flex-col justify-center">
+      <Title>Game on the Go</Title>
+      <Sub>Isn't it magical!</Sub>
 
+      {/* TODO: Some sort of image here */}
+      
       <Field
         placeholder="Your name"
         aria-label="Your name"
