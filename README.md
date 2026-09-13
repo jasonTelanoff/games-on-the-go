@@ -1,0 +1,59 @@
+# party-games
+
+Local-multiplayer party game platform. One Node server (runs on a laptop,
+a phone hotspot host, or behind a tunnel); phones join through the browser.
+Turn-based games only — no tick loops, no prediction, no interpolation.
+
+## Slice 1: game engine + plugin framework
+
+- `src/framework.ts` — the `GameDefinition` contract every game implements,
+  plus the game-agnostic wire protocol (`ClientMessage` / `ServerMessage`).
+- `src/games/liars-dice/` — game #1: pure engine, plugin wiring, tests.
+
+## Run
+
+```sh
+npm install
+npm test        # tsc + node --test, all engine tests
+```
+
+## Slices
+
+1. ✅ Engine: pure Liar's Dice logic + `GameDefinition` plugin framework + wire
+   protocol (`src/framework.ts`). 10 engine tests.
+2. ✅ Server: one table, no rooms or codes — whoever connects joins. The
+   first player to join is the host. Names are unique and act as identity:
+   reconnecting with the same name reclaims your seat. A mid-game
+   disconnect pauses the game; the host can send everyone back to the
+   lobby. If the host disconnects, the earliest-joined connected player
+   becomes host (and keeps it). The host picks the game from the lobby.
+   Static file serving on the same port; the server prints its LAN URL on
+   startup. Unit + socket e2e tests (a real two-player game played over
+   actual websockets, plus pause/rejoin/host-migration).
+3. ✅ Client: React 19 + Vite, mobile-first. Name-only join (rejoin with the
+   same name to reclaim your seat), then lobby → game. The host picks the
+   game in the lobby. Each game is a component registered in
+   `client/src/games/` — new games plug in there. No server address to
+   type — it always talks to the server that served the page. Paused-game
+   banner with a host "back to lobby" button.
+4. ✅ Docs: `docs/phone-hosting.md` — Termux setup, same-WiFi hosting, and
+   Cloudflare Tunnel for cross-network play.
+
+## Run
+
+```sh
+npm install
+npm test        # build + all tests (engine, rooms, socket e2e)
+npm run serve   # build + start on http://localhost:8080 (PORT=xxxx to change)
+```
+
+Open two browser tabs at http://localhost:8080 to play against yourself.
+
+## Design notes
+
+- The engine is pure: `(state, playerId, action, rand?) -> { state, events }`.
+  Illegal actions throw; the server translates those into error messages.
+- Hidden information lives in `getView()` — a player only ever sees their
+  own dice plus everyone else's counts. Tests assert no leakage.
+- Randomness is injected, so tests rig the dice deterministically.
+- The framework stays minimal until the second game (poker) earns new features.
