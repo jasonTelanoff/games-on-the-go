@@ -164,3 +164,13 @@ test('a disconnected seat keeps its avatar; rejoin reclaims it', () => {
   assert.equal(ana2.id, ana.id);
   assert.equal(ana2.avatarId, 'fox');
 });
+
+test('isRejoin distinguishes a returning seat from a new join', () => {
+  const mgr = new TableManager();
+  assert.equal(mgr.isRejoin('Ana'), false);
+  mgr.join('Ana', 'fox');
+  assert.equal(mgr.isRejoin('ana'), false); // connected — not a rejoin
+  mgr.disconnect(mgr.getTable().players[0].id);
+  assert.equal(mgr.isRejoin('  ANA '), true); // trims, case-insensitive
+  assert.equal(mgr.isRejoin('Ben'), false);
+});

@@ -77,6 +77,15 @@ export class TableManager {
   }
 
   /**
+   * True when this name would reclaim a disconnected seat (used for logging
+   * "reconnected" vs "joined").
+   */
+  isRejoin(playerName: string): boolean {
+    const name = playerName.slice(0, 20).trim().toLowerCase();
+    return this.table.players.some((p) => p.name.toLowerCase() === name && !p.connected);
+  }
+
+  /**
    * New names join; existing names rejoin and reclaim their seat
    * (same id) — but only if the original is gone. Joining with a
    * connected player's name is rejected, not a hijack.

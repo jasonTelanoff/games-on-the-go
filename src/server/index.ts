@@ -10,8 +10,10 @@ import { readFile } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { WebSocketServer, WebSocket } from 'ws';
-import { ClientMessage, ServerMessage } from '../framework.js';
+import { ClientMessage, GameEvent, ServerMessage } from '../framework.js';
 import { TableError, TableManager, gameList } from './table.js';
+import { AVATARS } from '../avatars.js';
+import { logger } from './log.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(here, '../../public');
@@ -70,6 +72,39 @@ export async function startServer(port: number): Promise<RunningServer> {
   const mgr = new TableManager();
   const conns = new Set<Conn>();
 
+  // ---- logging helpers ----
+  const glyphOf = (avatarId: string): string =>
+    AVATARS.find((a) => a.id === avatarId)?.glyph ?? '';
+  const nameOf = (id: string): string =>
+    mgr.getTable().players.find((p) => p.id === id)?.name ?? '???';
+  const connectedCount = (): number =>
+    mgr.getTable().players.filter((p) => p.connected).length;
+
+  /** Human-readable narration for known game events; null when unknown. */
+  function describeEvent(e: GameEvent): string | null {
+    switch (e.type) {
+      case 'bidPlaced': {
+        const b = e.bid as { playerId: string; quantity: number; face: number } | undefined;
+        return b ? `🎲 ${nameOf(b.playerId)} bids ${b.quantity} × ${b.face}s` : null;
+      }
+      case 'challengeResolved': {
+        const r = e.result as
+          | { bidStood: boolean; loserId: string; actualCount: number; bid: { face: number } }
+          | undefined;
+        if (!r) return null;
+        return r.bidStood
+          ? `🛡 bid stood (${r.actualCount} × ${r.bid.face}s) — ${nameOf(r.loserId)} loses a die`
+          : `⚔ only ${r.actualCount} × ${r.bid.face}s — ${nameOf(r.loserId)} was lying, loses a die`;
+      }
+      case 'playerEliminated':
+        return typeof e.playerId === 'string' ? `💀 ${nameOf(e.playerId)} is out` : null;
+      case 'gameOver':
+        return typeof e.winnerId === 'string' ? `🏆 ${nameOf(e.winnerId)} wins!` : null;
+      default:
+        return null;
+    }
+  }
+
   const httpServer = createServer((req, res) => {
     serveStatic(req, res).catch(() => {
       res.writeHead(500);
@@ -113,6 +148,7 @@ export async function startServer(port: number): Promise<RunningServer> {
   wss.on('connection', (ws: WebSocket) => {
     const conn: Conn = { ws, playerId: null };
     conns.add(conn);
+    logger.debug('ws: new connection');
 
     ws.on('message', (raw) => {
       let msg: ClientMessage;
@@ -125,10 +161,17 @@ export async function startServer(port: number): Promise<RunningServer> {
       try {
         switch (msg.kind) {
           case 'hello': {
+            const rejoining = mgr.isRejoin(msg.playerName);
             const player = mgr.join(msg.playerName, msg.avatarId);
             conn.playerId = player.id;
+            const crown = mgr.isHost(player.id) ? ' 👑' : '';
+            logger.info(
+              `${rejoining ? '↩' : '→'} ${player.name} ${glyphOf(player.avatarId)}${crown} ` +
+                `${rejoining ? 'reconnected' : 'joined'} (${connectedCount()} connected)`,
+            );
             send(conn, { kind: 'welcome', playerId: player.id, isHost: mgr.isHost(player.id) });
             const resumed = mgr.tryResume();
+            if (resumed) logger.info('▶ all players back — game resumed');
             broadcastLobby();
             if (resumed) broadcastViews();
             break;
@@ -136,12 +179,20 @@ export async function startServer(port: number): Promise<RunningServer> {
           case 'selectGame': {
             if (!conn.playerId) throw new TableError('Say hello first');
             mgr.selectGame(msg.gameId, conn.playerId);
+            const g = gameList().find((g) => g.id === msg.gameId);
+            logger.debug(`${nameOf(conn.playerId)} selected ${g?.name ?? msg.gameId}`);
             broadcastLobby();
             break;
           }
           case 'startGame': {
             if (!conn.playerId) throw new TableError('Say hello first');
             mgr.startGame(conn.playerId);
+            const t = mgr.getTable();
+            const g = gameList().find((g) => g.id === t.gameId);
+            logger.info(
+              `▶ ${nameOf(conn.playerId)} started ${g?.name ?? t.gameId} — ` +
+                `${t.gamePlayerIds.length} players: ${t.gamePlayerIds.map(nameOf).join(', ')}`,
+            );
             broadcastViews();
             broadcastLobby();
             break;
@@ -149,12 +200,19 @@ export async function startServer(port: number): Promise<RunningServer> {
           case 'toLobby': {
             if (!conn.playerId) throw new TableError('Say hello first');
             mgr.toLobby(conn.playerId);
+            logger.info(`↩ ${nameOf(conn.playerId)} sent everyone back to the lobby`);
             broadcastLobby();
             break;
           }
           case 'action': {
             if (!conn.playerId) throw new TableError('Say hello first');
             mgr.applyAction(conn.playerId, msg.action);
+            logger.debug(`← ${nameOf(conn.playerId)}: ${JSON.stringify(msg.action)}`);
+            for (const e of mgr.getTable().lastEvents) {
+              const text = describeEvent(e);
+              if (text) logger.info(text);
+              else logger.debug(`event: ${JSON.stringify(e)}`);
+            }
             broadcastViews();
             if (mgr.gameEnded()) {
               // Final views (with the winner) are already out; now lobby up.
@@ -167,14 +225,36 @@ export async function startServer(port: number): Promise<RunningServer> {
             send(conn, { kind: 'error', message: 'Unknown message' });
         }
       } catch (e) {
-        send(conn, { kind: 'error', message: e instanceof Error ? e.message : 'Something broke' });
+        const message = e instanceof Error ? e.message : 'Something broke';
+        const actor = conn.playerId
+          ? nameOf(conn.playerId)
+          : msg.kind === 'hello' && msg.playerName.trim()
+            ? `?${msg.playerName.trim()}`
+            : '(unknown)';
+        logger.warn(`✖ ${actor}: ${message}`);
+        send(conn, { kind: 'error', message });
       }
     });
 
     ws.on('close', () => {
       conns.delete(conn);
       if (!conn.playerId) return;
+      const name = nameOf(conn.playerId);
+      const wasHost = mgr.isHost(conn.playerId);
       const paused = mgr.disconnect(conn.playerId);
+      logger.info(`← ${name} disconnected`);
+      if (paused) {
+        const t = mgr.getTable();
+        const waiting = t.gamePlayerIds
+          .filter((id) => !t.players.some((p) => p.id === id && p.connected))
+          .map(nameOf)
+          .join(', ');
+        logger.info(`⏸ game paused — waiting on: ${waiting}`);
+      }
+      if (wasHost) {
+        const nextHost = mgr.getTable().hostId;
+        if (nextHost) logger.info(`👑 host → ${nameOf(nextHost)}`);
+      }
       if (paused) {
         for (const c of conns) {
           send(c, { kind: 'error', message: 'A player disconnected — game paused.' });

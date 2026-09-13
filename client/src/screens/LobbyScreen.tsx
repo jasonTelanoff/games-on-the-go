@@ -64,7 +64,7 @@ export default function LobbyScreen({
 
       {tablePhase === 'lobby' && (
         <>
-          {isHost && games.length > 1 && (
+          {games.length > 0 && (
             <>
               <Label>Game</Label>
               <Row className="my-2">
@@ -73,6 +73,7 @@ export default function LobbyScreen({
                     key={g.id}
                     size="sm"
                     selected={g.id === gameId}
+                    disabled={!isHost}
                     onClick={() => onSelectGame(g.id)}
                   >
                     {g.name}
