@@ -75,21 +75,25 @@ function TurnControls({ view, playerId, sendAction }: {
   sendAction: (action: unknown) => void;
 }) {
   const max = totalDice(view);
-  const [qty, setQty] = useState(3);
-  const [face, setFace] = useState<BidFace>(4);
-  const clampedQty = Math.min(Math.max(1, qty), max);
-  const legal = isLegalBid(pseudoState(view), playerId, clampedQty, face);
+  // Nothing pre-selected: the player picks a quantity and a face.
+  const [qty, setQty] = useState<number | null>(null);
+  const [face, setFace] = useState<BidFace | null>(null);
+  const clampedQty = qty === null ? null : Math.min(Math.max(1, qty), max);
+  const chosen = clampedQty !== null && face !== null;
+  const legal = chosen && isLegalBid(pseudoState(view), playerId, clampedQty, face);
 
   return (
     <>
       <Label>Your bid</Label>
       <Row className="justify-center my-3">
         <div className="w-[52px] shrink-0">
-          <Button size="sm" className="text-[22px]" onClick={() => setQty((q) => Math.max(1, q - 1))}>−</Button>
+          <Button size="sm" className="text-[22px]" onClick={() => setQty((q) => Math.max(1, (q ?? 2) - 1))}>−</Button>
         </div>
-        <span className="w-16 text-center text-[30px] font-bold tabular-nums">{clampedQty}</span>
+        <span className="w-16 text-center text-[30px] font-bold tabular-nums">
+          {clampedQty ?? <span className="text-muted">–</span>}
+        </span>
         <div className="w-[52px] shrink-0">
-          <Button size="sm" className="text-[22px]" onClick={() => setQty((q) => Math.min(max, q + 1))}>+</Button>
+          <Button size="sm" className="text-[22px]" onClick={() => setQty((q) => Math.min(max, (q ?? 0) + 1))}>+</Button>
         </div>
       </Row>
       <div className="flex gap-2 my-3">
@@ -98,7 +102,7 @@ function TurnControls({ view, playerId, sendAction }: {
             key={f}
             size="face"
             selected={face === f}
-            onClick={() => setFace(f)}
+            onClick={() => setFace(face === f ? null : f)}
             aria-label={`Face ${f}`}
           >
             <Die value={f} />
@@ -106,8 +110,11 @@ function TurnControls({ view, playerId, sendAction }: {
         ))}
       </div>
 
-      {!legal && view.currentBid && (
+      {chosen && !legal && view.currentBid && (
         <Hint className="text-center">That bid doesn’t beat the current one.</Hint>
+      )}
+      {!chosen && (
+        <Hint className="text-center">Pick a quantity and a face.</Hint>
       )}
 
       <StickyBar>
@@ -115,10 +122,14 @@ function TurnControls({ view, playerId, sendAction }: {
           <Button
             variant="primary"
             disabled={!legal}
-            onClick={() => sendAction({ type: 'bid', quantity: clampedQty, face })}
+            onClick={() => {
+              if (clampedQty !== null && face !== null) {
+                sendAction({ type: 'bid', quantity: clampedQty, face });
+              }
+            }}
           >
             <span className="inline-flex items-center gap-1.5">
-              Bid {clampedQty} × <Die size="sm" value={face} />
+              Bid {clampedQty ?? '–'} × {face !== null ? <Die size="sm" value={face} /> : '–'}
             </span>
           </Button>
         </div>
