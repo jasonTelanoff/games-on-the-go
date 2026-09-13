@@ -50,15 +50,26 @@ export default function App() {
   }
 
   const [state, setState] = useState<AppState>(initial);
+  const [noticeExiting, setNoticeExiting] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const isHost = state.hostId !== null && state.hostId === state.playerId;
 
   // Notices clear themselves.
   useEffect(() => {
-    if (!state.notice) return;
-    const t = setTimeout(() => setState((s) => ({ ...s, notice: '' })), 4000);
+    if (!state.notice) {
+      setNoticeExiting(false);
+      return;
+    }
+    const t = setTimeout(() => setNoticeExiting(true), 4000);
     return () => clearTimeout(t);
   }, [state.notice]);
+
+  // Animate out then clear.
+  useEffect(() => {
+    if (!noticeExiting) return;
+    const t = setTimeout(() => setState((s) => ({ ...s, notice: '' })), 300);
+    return () => clearTimeout(t);
+  }, [noticeExiting]);
 
   // Don't leave a dangling socket.
   useEffect(() => () => wsRef.current?.close(), []);
@@ -132,7 +143,7 @@ export default function App() {
 
   return (
     <div id="app">
-      {state.notice && <Notice>{state.notice}</Notice>}
+      {state.notice && <Notice isExiting={noticeExiting}>{state.notice}</Notice>}
 
       {state.screen === 'connect' && <ConnectScreen onJoin={join} />}
 

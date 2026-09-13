@@ -127,9 +127,9 @@ export function Label({ children }: { children: ReactNode }) {
   );
 }
 
-export function Notice({ children }: { children: ReactNode }) {
+export function Notice({ children, isExiting }: { children: ReactNode; isExiting?: boolean }) {
   return (
-    <div className="rounded-xl bg-warn-bg/60 border border-warn-line/50 text-warn-ink text-[14px] px-4 py-3 mb-4">
+    <div className={cx('fixed top-4 left-5 right-5 z-50 rounded-xl bg-warn-bg border border-warn-line/50 text-warn-ink text-[14px] px-4 py-3', isExiting ? 'animate-slide-up' : 'animate-slide-down')}>
       {children}
     </div>
   );
