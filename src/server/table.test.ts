@@ -12,6 +12,14 @@ test('first player to join becomes the host', () => {
   assert.equal(mgr.getTable().hostId, ana.id);
 });
 
+test('joining with a connected player\'s name is rejected, not a hijack', () => {
+  const mgr = new TableManager();
+  const ana = mgr.join('Ana');
+  assert.throws(() => mgr.join('ana'), TableError);
+  assert.equal(mgr.getTable().players.length, 1);
+  assert.equal(mgr.getTable().hostId, ana.id); // host untouched
+});
+
 test('rejoining with the same name reclaims the seat (same id)', () => {
   const mgr = new TableManager();
   const ana = mgr.join('Ana');
@@ -63,6 +71,31 @@ test('only the host can start; needs 2+ connected players', () => {
   assert.equal(mgr.getTable().phase, 'playing');
   // Only connected players are dealt in.
   assert.deepEqual(mgr.getTable().gamePlayerIds, [ana.id, ben.id]);
+});
+
+test('a waiting spectator disconnecting mid-game does not pause', () => {
+  const mgr = new TableManager();
+  const ana = mgr.join('Ana');
+  const ben = mgr.join('Ben');
+  mgr.startGame(ana.id);
+  const cat = mgr.join('Cat'); // joins mid-game, waits
+  assert.equal(mgr.disconnect(cat.id), false);
+  assert.equal(mgr.getTable().phase, 'playing');
+});
+
+test('paused game auto-resumes when every dealt-in player is back', () => {
+  const mgr = new TableManager();
+  const ana = mgr.join('Ana');
+  const ben = mgr.join('Ben');
+  mgr.startGame(ana.id);
+  mgr.disconnect(ben.id);
+  assert.equal(mgr.getTable().phase, 'paused');
+  assert.equal(mgr.tryResume(), false); // Ben still gone
+
+  mgr.join('Ben');
+  assert.equal(mgr.tryResume(), true);
+  assert.equal(mgr.getTable().phase, 'playing');
+  assert.equal(mgr.tryResume(), false); // no-op when not paused
 });
 
 test('mid-game disconnect pauses; actions are rejected while paused', () => {

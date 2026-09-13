@@ -23,10 +23,12 @@ npm test        # tsc + node --test, all engine tests
    protocol (`src/framework.ts`). 10 engine tests.
 2. ✅ Server: one table, no rooms or codes — whoever connects joins. The
    first player to join is the host. Names are unique and act as identity:
-   reconnecting with the same name reclaims your seat. A mid-game
-   disconnect pauses the game; the host can send everyone back to the
-   lobby. If the host disconnects, the earliest-joined connected player
-   becomes host (and keeps it). The host picks the game from the lobby.
+   reconnecting with the same name reclaims your seat (a name that's
+   already in use is rejected). A dealt-in player disconnecting mid-game
+   pauses it; the game auto-resumes when everyone is back, or the host
+   can send everyone back to the lobby. If the host disconnects, the
+   earliest-joined connected player becomes host (and keeps it). The
+   host picks the game from the lobby.
    Static file serving on the same port; the server prints its LAN URL on
    startup. Unit + socket e2e tests (a real two-player game played over
    actual websockets, plus pause/rejoin/host-migration).

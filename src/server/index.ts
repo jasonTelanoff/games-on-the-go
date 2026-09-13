@@ -128,7 +128,9 @@ export async function startServer(port: number): Promise<RunningServer> {
             const player = mgr.join(msg.playerName);
             conn.playerId = player.id;
             send(conn, { kind: 'welcome', playerId: player.id, isHost: mgr.isHost(player.id) });
+            const resumed = mgr.tryResume();
             broadcastLobby();
+            if (resumed) broadcastViews();
             break;
           }
           case 'selectGame': {

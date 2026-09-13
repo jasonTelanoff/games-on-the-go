@@ -123,16 +123,17 @@ test('full lifecycle: join, play, pause on disconnect, rejoin, host migration', 
     const benRecord = a.players.find((p) => p.name === 'Ben')!;
     assert.ok(!benRecord.connected);
 
-    // Host sends everyone back to the lobby.
-    send(a, { kind: 'toLobby' });
-    await waitFor(() => a.phase === 'lobby');
-
-    // Ben rejoins with the same name and reclaims his seat.
+    // Ben rejoins with the same name -> seat reclaimed, game auto-resumes.
     const b2 = await connect(server.port);
     send(b2, { kind: 'hello', playerName: 'Ben' });
     await waitFor(() => b2.playerId !== '');
     assert.equal(b2.playerId, b.playerId);
     await waitFor(() => b2.players.find((p) => p.name === 'Ben')?.connected === true);
+    await waitFor(() => b2.phase === 'playing' && b2.view?.phase === 'bidding');
+
+    // Host ends it from the resumed game.
+    send(a, { kind: 'toLobby' });
+    await waitFor(() => a.phase === 'lobby');
 
     // Host (Ana) disconnects -> Ben becomes host and keeps it.
     a.ws.close();

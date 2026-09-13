@@ -76,13 +76,15 @@ export class TableManager {
 
   /**
    * New names join; existing names rejoin and reclaim their seat
-   * (same id). The first player to join becomes the host.
+   * (same id) — but only if the original is gone. Joining with a
+   * connected player's name is rejected, not a hijack.
    */
   join(playerName: string): TablePlayer {
     const t = this.table;
     const name = playerName.slice(0, 20).trim() || 'Player';
     const existing = t.players.find((p) => p.name.toLowerCase() === name.toLowerCase());
     if (existing) {
+      if (existing.connected) throw new TableError(`"${existing.name}" is already here`);
       existing.connected = true;
       if (t.hostId === null) t.hostId = existing.id;
       return existing;
@@ -171,10 +173,10 @@ export class TableManager {
   }
 
   /**
-   * Mark a player disconnected. A mid-game disconnect pauses the game.
-   * Host migrates to the earliest-joined connected player; the og host
-   * does not get it back on rejoin. Returns true when this disconnect
-   * paused the game.
+   * Mark a player disconnected. A dealt-in player disconnecting mid-game
+   * pauses it (a waiting spectator disconnecting does not). Host migrates
+   * to the earliest-joined connected player; the og host does not get it
+   * back on rejoin. Returns true when this disconnect paused the game.
    */
   disconnect(playerId: string): boolean {
     const t = this.table;
@@ -182,7 +184,7 @@ export class TableManager {
     if (!player || !player.connected) return false;
     player.connected = false;
     let paused = false;
-    if (t.phase === 'playing') {
+    if (t.phase === 'playing' && t.gamePlayerIds.includes(playerId)) {
       t.phase = 'paused';
       paused = true;
     }
@@ -190,5 +192,20 @@ export class TableManager {
       t.hostId = t.players.find((p) => p.connected)?.id ?? null;
     }
     return paused;
+  }
+
+  /**
+   * Resume a paused game once every dealt-in player is connected again.
+   * Returns true when the game resumed.
+   */
+  tryResume(): boolean {
+    const t = this.table;
+    if (t.phase !== 'paused') return false;
+    const allBack = t.gamePlayerIds.every((id) =>
+      t.players.some((p) => p.id === id && p.connected),
+    );
+    if (!allBack) return false;
+    t.phase = 'playing';
+    return true;
   }
 }
