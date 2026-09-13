@@ -7,7 +7,19 @@ import {
   isLegalBid,
 } from '../../../src/games/liars-dice/engine.js';
 import type { GameScreenProps } from './types.js';
-import { Button, Card, Chip, Die, Hint, Label, Notice, Row, Title, TopBar } from '../components/ui.js';
+import {
+  Button,
+  Chip,
+  Die,
+  Divider,
+  Hint,
+  Label,
+  Notice,
+  Row,
+  Screen,
+  StickyBar,
+  TopBar,
+} from '../components/ui.js';
 import { dieGlyph } from '../ui.js';
 
 function totalDice(v: PlayerView): number {
@@ -37,24 +49,26 @@ function challengeText(r: ChallengeResult, names: Record<string, string>): strin
 function Reveal({ result, names }: { result: ChallengeResult; names: Record<string, string> }) {
   const who = (id: string) => names[id] ?? '???';
   return (
-    <div className="mt-4 bg-deep border border-line rounded-[10px] p-3">
-      <p className="my-1.5 mb-2.5 text-[15px]">{challengeText(result, names)}</p>
+    <div className="mt-6 border-t border-line/60 pt-4">
+      <p className="my-0 mb-3 text-[15px]">{challengeText(result, names)}</p>
       {result.revealed.map((row) => (
-        <div className="flex justify-between items-center py-1" key={row.playerId}>
-          <span className="text-[15px]">{who(row.playerId)}</span>
+        <div className="flex justify-between items-center py-1.5" key={row.playerId}>
+          <span className="text-[15px] text-muted">{who(row.playerId)}</span>
           <span className="flex gap-1">
             {row.dice.map((d, i) => (
-              <Die small value={d} key={i} />
+              <Die size="sm" value={d} key={i} />
             ))}
           </span>
         </div>
       ))}
-      {result.eliminatedId && <p className="my-1.5 mb-2.5 text-[15px]">{who(result.eliminatedId)} is out!</p>}
+      {result.eliminatedId && (
+        <p className="mt-3 mb-0 text-[15px] font-semibold">{who(result.eliminatedId)} is out!</p>
+      )}
     </div>
   );
 }
 
-function BidControls({ view, playerId, sendAction }: {
+function TurnControls({ view, playerId, sendAction }: {
   view: PlayerView;
   playerId: string;
   sendAction: (action: unknown) => void;
@@ -66,35 +80,48 @@ function BidControls({ view, playerId, sendAction }: {
   const legal = isLegalBid(pseudoState(view), playerId, clampedQty, face);
 
   return (
-    <div className="mt-1.5">
-      <Row className="my-2">
-        <Button size="sm" onClick={() => setQty((q) => Math.max(1, q - 1))}>−</Button>
-        <span className="flex-1 text-center text-[26px] font-bold">{clampedQty}</span>
-        <Button size="sm" onClick={() => setQty((q) => Math.min(max, q + 1))}>+</Button>
+    <>
+      <Label>Your bid</Label>
+      <Row className="justify-center my-3">
+        <Button size="sm" className="w-[52px] text-[22px]" onClick={() => setQty((q) => Math.max(1, q - 1))}>−</Button>
+        <span className="w-16 text-center text-[30px] font-bold tabular-nums">{clampedQty}</span>
+        <Button size="sm" className="w-[52px] text-[22px]" onClick={() => setQty((q) => Math.min(max, q + 1))}>+</Button>
       </Row>
-      <div className="flex gap-2 my-2.5">
+      <div className="flex gap-2 my-3">
         {([2, 3, 4, 5, 6] as BidFace[]).map((f) => (
           <Button
             key={f}
             size="face"
             selected={face === f}
             onClick={() => setFace(f)}
+            aria-label={`Face ${f}`}
           >
             <Die value={f} />
           </Button>
         ))}
       </div>
-      <Button
-        variant="primary"
-        disabled={!legal}
-        onClick={() => sendAction({ type: 'bid', quantity: clampedQty, face })}
-      >
-        <span className="inline-flex items-center gap-1.5">Bid {clampedQty} × <Die small value={face} /></span>
-      </Button>
+
       {!legal && view.currentBid && (
-        <Hint>That bid does not beat the current one.</Hint>
+        <Hint className="text-center">That bid doesn’t beat the current one.</Hint>
       )}
-    </div>
+
+      <StickyBar>
+        <Button
+          variant="primary"
+          disabled={!legal}
+          onClick={() => sendAction({ type: 'bid', quantity: clampedQty, face })}
+        >
+          <span className="inline-flex items-center gap-1.5">
+            Bid {clampedQty} × <Die size="sm" value={face} />
+          </span>
+        </Button>
+        {view.currentBid && (
+          <Button variant="danger" onClick={() => sendAction({ type: 'challenge' })}>
+            Liar!
+          </Button>
+        )}
+      </StickyBar>
+    </>
   );
 }
 
@@ -112,7 +139,15 @@ export default function LiarsDiceGame({
   const myTurn = v.turnPlayerId === playerId && !paused;
 
   return (
-    <Card>
+    <Screen className="min-h-[90dvh] flex flex-col">
+      <TopBar>
+        <Chip>Round {v.round}</Chip>
+        {isHost && <Chip>host</Chip>}
+        <div className="flex-1" />
+        {paused && <Chip>paused</Chip>}
+        {myTurn && <Chip>your turn</Chip>}
+      </TopBar>
+
       {paused && (
         <Notice>
           Game paused — a player disconnected.
@@ -122,64 +157,73 @@ export default function LiarsDiceGame({
       {paused && isHost && (
         <Button variant="primary" onClick={onToLobby}>Back to lobby</Button>
       )}
-      <TopBar>
-        <Chip>Round {v.round}</Chip>
-        {isHost && <Chip>host</Chip>}
-      </TopBar>
 
       {v.phase === 'gameOver' ? (
-        <>
-          <Title>Game over</Title>
-          <p className="text-2xl text-center my-4">{who(v.winnerId!)} wins! 🎉</p>
-          <Button variant="primary" onClick={onBackToLobby}>Back to lobby</Button>
-        </>
+        <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
+          <div className="text-[15px] text-muted mb-2">Game over</div>
+          <div className="text-[30px] font-bold tracking-tight mb-8">{who(v.winnerId!)} wins 🎉</div>
+          <div className="w-full">
+            <Button variant="primary" onClick={onBackToLobby}>
+              Back to lobby
+            </Button>
+          </div>
+        </div>
       ) : (
         <>
-          <div className="flex gap-2 overflow-x-auto mb-3">
-            {v.players.map((p) => (
-              <div
-                className={
-                  'flex-1 min-w-[84px] bg-deep rounded-[10px] p-2 text-center border-2 ' +
-                  (p.id === v.turnPlayerId ? 'border-accent' : 'border-line')
-                }
-                key={p.id}
-              >
-                <div className="text-sm font-semibold">{who(p.id)}</div>
-                <div className="text-[15px] text-muted mt-1">🎲 {p.diceCount}</div>
-              </div>
-            ))}
+          {/* Players: active turn gets the accent dot. */}
+          <div className="flex gap-5 overflow-x-auto py-2">
+            {v.players.map((p) => {
+              const active = p.id === v.turnPlayerId;
+              return (
+                <div className="flex flex-col items-center min-w-[52px]" key={p.id}>
+                  <span
+                    className={
+                      'w-1.5 h-1.5 rounded-full mb-1.5 ' + (active ? 'bg-accent' : 'bg-transparent')
+                    }
+                  />
+                  <span className={'text-[13px] max-w-[72px] truncate ' + (active ? 'font-semibold text-ink' : 'text-muted')}>
+                    {who(p.id)}
+                  </span>
+                  <span className="text-[12px] text-muted mt-0.5 tabular-nums">🎲 {p.diceCount}</span>
+                </div>
+              );
+            })}
           </div>
 
-          <div className="text-[18px] text-center my-3 min-h-[26px]">
-            {v.currentBid
-              ? <>Bid: {v.currentBid.quantity} × <Die small value={v.currentBid.face} /> ({who(v.currentBid.playerId)})</>
-              : 'No bid yet — open the bidding!'}
+          <Divider className="my-3" />
+
+          {/* Current bid, hero-sized. */}
+          <div className="text-center py-5">
+            {v.currentBid ? (
+              <>
+                <div className="text-[44px] font-bold tracking-tight leading-none">
+                  {v.currentBid.quantity} × <Die value={v.currentBid.face} />
+                </div>
+                <div className="text-muted text-[14px] mt-2">bid by {who(v.currentBid.playerId)}</div>
+              </>
+            ) : (
+              <div className="text-muted text-[16px]">No bid yet — open the bidding</div>
+            )}
           </div>
 
           <Label>Your dice</Label>
-          <div className="flex gap-2.5 justify-center flex-wrap my-1.5 mb-3">
+          <div className="flex gap-2.5 justify-center flex-wrap py-2">
             {v.yourDice.map((d, i) => (
-              <Die value={d} key={i} />
+              <Die size="lg" value={d} key={i} />
             ))}
           </div>
 
+          <Divider />
+
           {myTurn ? (
-            <>
-              <div className="text-center text-xl font-bold text-accent-soft my-2">Your turn!</div>
-              <BidControls view={v} playerId={playerId} sendAction={sendAction} />
-              {v.currentBid && (
-                <Button variant="danger" className="mt-2.5" onClick={() => sendAction({ type: 'challenge' })}>
-                  Liar! (challenge)
-                </Button>
-              )}
-            </>
+            <TurnControls view={v} playerId={playerId} sendAction={sendAction} />
           ) : (
-            <Hint>Waiting on {who(v.turnPlayerId!)}…</Hint>
+            <Hint className="text-center py-4">Waiting on {who(v.turnPlayerId!)}…</Hint>
           )}
 
           {v.lastChallenge && <Reveal result={v.lastChallenge} names={names} />}
         </>
       )}
-    </Card>
+    </Screen>
   );
 }

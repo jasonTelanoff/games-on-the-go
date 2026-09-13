@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { GAME_COMPONENTS, GAME_NAMES } from '../games/index.js';
 import LobbyScreen from '../screens/LobbyScreen.js';
-import { Button, Card, Chip, Hint, Row, TopBar } from '../components/ui.js';
+import { Button, Chip, Hint, Row, Screen, TopBar } from '../components/ui.js';
 import { DEV_NAMES, DEV_SCENARIOS } from './mocks.js';
 import type { LobbyPlayer } from '../types.js';
 
@@ -38,7 +38,7 @@ export default function DevPlayground() {
 
   return (
     <div id="app">
-      <Card>
+      <Screen>
         <TopBar>
           <Chip>dev playground</Chip>
           <Hint className="my-0">?dev — no server needed</Hint>
@@ -48,8 +48,7 @@ export default function DevPlayground() {
             <Button
               key={label}
               size="sm"
-              className="w-auto px-3 text-[15px]"
-              variant={isActive(t) ? 'primary' : 'ghost'}
+              variant={isActive(t) ? 'primary' : 'secondary'}
               onClick={() => { setTab(t); setScenarioIdx(0); }}
             >
               {label}
@@ -63,8 +62,7 @@ export default function DevPlayground() {
               <Button
                 key={s.label}
                 size="sm"
-                className="w-auto px-3 text-[15px]"
-                variant={i === scenarioIdx ? 'primary' : 'ghost'}
+                variant={i === scenarioIdx ? 'primary' : 'secondary'}
                 onClick={() => setScenarioIdx(i)}
               >
                 {s.label}
@@ -75,7 +73,7 @@ export default function DevPlayground() {
 
         {tab.kind === 'lobby' && (
           <Row className="my-2">
-            <Button size="sm" className="w-auto px-3 text-[15px]" onClick={() => setLobbyHost((h) => !h)}>
+            <Button size="sm" onClick={() => setLobbyHost((h) => !h)}>
               {lobbyHost ? 'Viewing as host' : 'Viewing as player'} (toggle)
             </Button>
           </Row>
@@ -89,10 +87,10 @@ export default function DevPlayground() {
                 <div key={i}>{a}</div>
               ))}
             </Hint>
-            <Button size="sm" className="w-auto px-3 text-[15px]" onClick={() => setActions([])}>Clear</Button>
+            <Button size="sm" onClick={() => setActions([])}>Clear</Button>
           </>
         )}
-      </Card>
+      </Screen>
 
       {tab.kind === 'game' &&
         (() => {

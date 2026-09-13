@@ -70,10 +70,15 @@ instead of sending it. Scenarios live in `client/src/dev/mocks.ts`.
 
 Styling is Tailwind v4 (`@tailwindcss/vite`). The theme tokens — Jason's
 tweaked colors — live in `client/src/index.css` under `@theme`.
-`client/src/components/ui.tsx` holds the shared components (`Button`,
-`Card`, `Chip`, `Notice`, `Field`, `Label`, `Die`…): screens compose
-those instead of hand-rolling class strings. Game-specific layout stays
-in the game's own component file.
+`client/src/components/ui.tsx` holds the shared components (`Screen`,
+`TopBar`, `StickyBar`, `Button`, `Chip`, `Notice`, `Field`, `Label`,
+`Divider`, `Die`…): screens compose those instead of hand-rolling class
+strings. Game-specific layout stays in the game's own component file.
+
+Design language: flat and mobile-first — no card boxes. Sections are
+separated by hairline dividers, the header is a sticky blurred bar, and
+primary actions sit in a sticky bottom bar (`StickyBar`) where thumbs
+can reach them. One accent color, used sparingly.
 
 ## Design notes
 
