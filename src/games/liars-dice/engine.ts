@@ -39,12 +39,11 @@ export interface ChallengeResult {
   /** True when actualCount >= bid quantity: the challenger loses the die. */
   bidStood: boolean;
   loserId: string;
-  eliminatedId: string | null;
   /** Every player's dice, revealed by the challenge. Shown in the UI. */
   revealed: { playerId: string; dice: number[] }[];
 }
 
-export type Phase = 'bidding' | 'gameOver';
+export type Phase = 'bidding' | 'reveal' | 'gameOver';
 
 export interface GameState {
   /** Players still in the game, in seat order. */
@@ -60,7 +59,8 @@ export interface GameState {
 
 export type Action =
   | { type: 'bid'; quantity: number; face: BidFace }
-  | { type: 'challenge' };
+  | { type: 'challenge' }
+  | { type: 'continue' };
 
 export type GameEvent =
   | { type: 'bidPlaced'; bid: Bid }
@@ -137,9 +137,22 @@ export function applyAction(
   action: Action,
   rand: Rand = Math.random,
 ): ActionResult {
-  if (state.phase !== 'bidding') {
+  if (state.phase === 'gameOver') {
     throw new IllegalActionError('Game is over');
   }
+
+  // --- reveal: the challenge result is on screen; anyone still in the
+  // game can tap Continue to deal the next round. ---
+  if (state.phase === 'reveal') {
+    if (action.type !== 'continue') {
+      throw new IllegalActionError('Challenge is being revealed');
+    }
+    if (!state.players.some((p) => p.id === playerId)) {
+      throw new IllegalActionError(`${playerId} is not in the game`);
+    }
+    return continueFromReveal(state, rand);
+  }
+
   if (currentPlayerId(state) !== playerId) {
     throw new IllegalActionError(`Not ${playerId}'s turn`);
   }
@@ -157,7 +170,12 @@ export function applyAction(
     return { state: next, events: [{ type: 'bidPlaced', bid }] };
   }
 
-  // --- challenge ---
+  if (action.type === 'continue') {
+    throw new IllegalActionError('Nothing to continue');
+  }
+
+  // --- challenge: reveal the dice and hold for Continue. The loser only
+  // loses their die when the table continues to the next round. ---
   const bid = state.currentBid;
   if (!bid) {
     throw new IllegalActionError('No bid to challenge');
@@ -169,7 +187,34 @@ export function applyAction(
   const loserId = bidStood ? playerId : bid.playerId;
   const revealed = state.players.map((p) => ({ playerId: p.id, dice: [...p.dice] }));
 
+  const result: ChallengeResult = {
+    challengerId: playerId,
+    bid,
+    actualCount,
+    bidStood,
+    loserId,
+    revealed,
+  };
+  const next: GameState = {
+    ...state,
+    lastChallenge: result,
+    phase: 'reveal',
+  };
+  return { state: next, events: [{ type: 'challengeResolved', result }] };
+}
+
+/**
+ * Resolves the held challenge: the loser drops a die (and may be
+ * eliminated), then everyone re-rolls and the loser starts the new round.
+ */
+function continueFromReveal(state: GameState, rand: Rand): ActionResult {
+  const result = state.lastChallenge;
+  if (!result) {
+    throw new IllegalActionError('No challenge to continue from');
+  }
+  const loserId = result.loserId;
   const loserPos = state.players.findIndex((p) => p.id === loserId);
+
   let players = state.players.map((p) =>
     p.id === loserId ? { ...p, dice: p.dice.slice(0, p.dice.length - 1) } : p,
   );
@@ -178,16 +223,7 @@ export function applyAction(
     players = players.filter((p) => p.id !== eliminated.id);
   }
 
-  const result: ChallengeResult = {
-    challengerId: playerId,
-    bid,
-    actualCount,
-    bidStood,
-    loserId,
-    eliminatedId: eliminated ? eliminated.id : null,
-    revealed,
-  };
-  const events: GameEvent[] = [{ type: 'challengeResolved', result }];
+  const events: GameEvent[] = [];
   if (eliminated) {
     events.push({ type: 'playerEliminated', playerId: eliminated.id });
   }

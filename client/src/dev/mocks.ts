@@ -71,7 +71,8 @@ export const LIARS_DICE_SCENARIOS: DevScenario[] = [
   {
     label: 'Challenge reveal (liar!)',
     view: base({
-      turnPlayerId: BEN,
+      phase: 'reveal',
+      turnPlayerId: null,
       currentBid: { playerId: CAT, quantity: 5, face: 6 },
       lastChallenge: {
         challengerId: ANA,
@@ -79,7 +80,6 @@ export const LIARS_DICE_SCENARIOS: DevScenario[] = [
         actualCount: 2,
         bidStood: false,
         loserId: CAT,
-        eliminatedId: null,
         revealed: [
           { playerId: ANA, dice: [3, 1, 5, 2, 6] },
           { playerId: BEN, dice: [6, 6, 2, 4, 3] },
@@ -93,7 +93,8 @@ export const LIARS_DICE_SCENARIOS: DevScenario[] = [
   {
     label: 'Challenge reveal (bid stood)',
     view: base({
-      turnPlayerId: CAT,
+      phase: 'reveal',
+      turnPlayerId: null,
       currentBid: { playerId: BEN, quantity: 3, face: 2 },
       lastChallenge: {
         challengerId: CAT,
@@ -101,7 +102,6 @@ export const LIARS_DICE_SCENARIOS: DevScenario[] = [
         actualCount: 4,
         bidStood: true,
         loserId: CAT,
-        eliminatedId: null,
         revealed: [
           { playerId: ANA, dice: [2, 1, 5, 2, 6] },
           { playerId: BEN, dice: [2, 6, 2, 4, 3] },
@@ -115,14 +115,14 @@ export const LIARS_DICE_SCENARIOS: DevScenario[] = [
   {
     label: 'Someone eliminated',
     view: base({
-      yourId: ANA,
+      phase: 'reveal',
       yourDice: [3, 1],
       players: [
         { id: ANA, diceCount: 2 },
         { id: BEN, diceCount: 4 },
         { id: CAT, diceCount: 0 },
       ],
-      turnPlayerId: BEN,
+      turnPlayerId: null,
       round: 6,
       currentBid: { playerId: ANA, quantity: 3, face: 4 },
       lastChallenge: {
@@ -131,7 +131,6 @@ export const LIARS_DICE_SCENARIOS: DevScenario[] = [
         actualCount: 0,
         bidStood: false,
         loserId: CAT,
-        eliminatedId: CAT,
         revealed: [
           { playerId: ANA, dice: [3, 1, 5, 2, 6] },
           { playerId: BEN, dice: [6, 6, 2, 4] },

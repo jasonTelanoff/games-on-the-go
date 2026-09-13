@@ -75,7 +75,12 @@ async function playFullGame(a: TestClient, b: TestClient): Promise<string> {
   while (Date.now() < deadline) {
     for (const c of [a, b]) {
       const v = c.view;
-      if (!v || v.phase !== 'bidding' || v.turnPlayerId !== c.playerId) continue;
+      if (!v) continue;
+      if (v.phase === 'reveal') {
+        send(c, { kind: 'action', action: { type: 'continue' } });
+        continue;
+      }
+      if (v.phase !== 'bidding' || v.turnPlayerId !== c.playerId) continue;
       send(
         c,
         v.currentBid

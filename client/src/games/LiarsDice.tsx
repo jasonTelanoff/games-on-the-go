@@ -21,7 +21,6 @@ import {
   StickyBar,
   TopBar,
 } from '../components/ui.js';
-import { dieGlyph } from '../ui.js';
 
 function totalDice(v: PlayerView): number {
   return v.players.reduce((n, p) => n + p.diceCount, 0);
@@ -40,21 +39,67 @@ function pseudoState(v: PlayerView): GameState {
   };
 }
 
-function challengeText(r: ChallengeResult, names: Record<string, string>): string {
-  const who = (id: string) => names[id] ?? '???';
-  return r.bidStood
-    ? `There were ${r.actualCount} ${dieGlyph(r.bid.face)}s — the bid stood. ${who(r.loserId)} loses a die.`
-    : `Only ${r.actualCount} ${dieGlyph(r.bid.face)}s — ${who(r.bid.playerId)} was lying! ${who(r.loserId)} loses a die.`;
-}
-
-function Reveal({ result, names }: { result: ChallengeResult; names: Record<string, string> }) {
+function PlayerStrip({ v, names, playerId, avatars }: {
+  v: PlayerView;
+  names: Record<string, string>;
+  playerId: string;
+  avatars: Record<string, string>;
+}) {
   const who = (id: string) => names[id] ?? '???';
   return (
-    <div className="mt-6 border-t border-line/60 pt-4">
-      <p className="my-0 mb-3 text-[15px]">{challengeText(result, names)}</p>
+    <div className="flex gap-5 overflow-x-auto py-2">
+      {v.players.map((p) => {
+        const active = p.id === v.turnPlayerId;
+        return (
+          <div
+            className={'flex flex-col items-center min-w-[52px] ' + (active ? '' : 'opacity-50')}
+            key={p.id}
+          >
+            <span className={'rounded-full p-0.5 ' + (active ? 'ring-2 ring-accent' : '')}>
+              <Avatar id={avatars[p.id]} />
+            </span>
+            <span className={'text-[13px] max-w-[80px] truncate mt-1 ' + (active ? 'font-semibold text-ink' : 'text-muted')}>
+              {who(p.id)}
+              {p.id === playerId && <span className="text-muted font-normal"> · you</span>}
+            </span>
+            <span className="text-[12px] text-muted mt-0.5 tabular-nums">🎲 {p.diceCount}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function RevealScreen({ result, names, playerId, sendAction }: {
+  result: ChallengeResult;
+  names: Record<string, string>;
+  playerId: string;
+  sendAction: (action: unknown) => void;
+}) {
+  const who = (id: string) => names[id] ?? '???';
+  const [continuing, setContinuing] = useState(false);
+  const loserDice = result.revealed.find((r) => r.playerId === result.loserId)?.dice.length ?? 0;
+  const eliminated = loserDice <= 1;
+  return (
+    <>
+      <div className="text-center py-4">
+        <div className="text-[15px] text-muted mb-2">{who(result.challengerId)} called Liar!</div>
+        <div className="text-[34px] font-bold tracking-tight leading-none inline-flex items-center gap-2">
+          {result.bid.quantity} × <Die value={result.bid.face} />
+        </div>
+        <div className="text-muted text-[14px] mt-2">
+          Actual: {result.actualCount} <span className="text-muted/70">(ones are wild)</span>
+        </div>
+      </div>
+
+      <Divider className="my-3" />
+
       {result.revealed.map((row) => (
         <div className="flex justify-between items-center py-1.5" key={row.playerId}>
-          <span className="text-[15px] text-muted">{who(row.playerId)}</span>
+          <span className={'text-[15px] ' + (row.playerId === playerId ? 'font-semibold text-ink' : 'text-muted')}>
+            {who(row.playerId)}
+            {row.playerId === playerId && <span className="text-muted font-normal"> · you</span>}
+          </span>
           <span className="flex gap-1">
             {row.dice.map((d, i) => (
               <Die size="sm" value={d} key={i} />
@@ -62,10 +107,27 @@ function Reveal({ result, names }: { result: ChallengeResult; names: Record<stri
           </span>
         </div>
       ))}
-      {result.eliminatedId && (
-        <p className="mt-3 mb-0 text-[15px] font-semibold">{who(result.eliminatedId)} is out!</p>
-      )}
-    </div>
+
+      <div className="my-4 rounded-xl border border-line px-4 py-3 text-[15px] text-center">
+        {result.bidStood
+          ? `The bid stood — ${who(result.challengerId)} loses a die.`
+          : `${who(result.bid.playerId)} was lying — ${who(result.loserId)} loses a die.`}
+        {eliminated && ` ${who(result.loserId)} is out!`}
+      </div>
+
+      <StickyBar>
+        <Button
+          variant="primary"
+          disabled={continuing}
+          onClick={() => {
+            setContinuing(true);
+            sendAction({ type: 'continue' });
+          }}
+        >
+          {continuing ? 'Continuing…' : 'Continue'}
+        </Button>
+      </StickyBar>
+    </>
   );
 }
 
@@ -189,29 +251,15 @@ export default function LiarsDiceGame({
             </Button>
           </div>
         </div>
+      ) : v.phase === 'reveal' && v.lastChallenge ? (
+        <>
+          <PlayerStrip v={v} names={names} playerId={playerId} avatars={avatars} />
+          <Divider className="my-3" />
+          <RevealScreen result={v.lastChallenge} names={names} playerId={playerId} sendAction={sendAction} />
+        </>
       ) : (
         <>
-          {/* Players: your avatar marks you, the accent ring marks the turn. */}
-          <div className="flex gap-5 overflow-x-auto py-2">
-            {v.players.map((p) => {
-              const active = p.id === v.turnPlayerId;
-              return (
-                <div
-                  className={'flex flex-col items-center min-w-[52px] ' + (active ? '' : 'opacity-50')}
-                  key={p.id}
-                >
-                  <span className={'rounded-full p-0.5 ' + (active ? 'ring-2 ring-accent' : '')}>
-                    <Avatar id={avatars[p.id]} />
-                  </span>
-                  <span className={'text-[13px] max-w-[80px] truncate mt-1 ' + (active ? 'font-semibold text-ink' : 'text-muted')}>
-                    {who(p.id)}
-                    {p.id === playerId && <span className="text-muted font-normal"> · you</span>}
-                  </span>
-                  <span className="text-[12px] text-muted mt-0.5 tabular-nums">🎲 {p.diceCount}</span>
-                </div>
-              );
-            })}
-          </div>
+          <PlayerStrip v={v} names={names} playerId={playerId} avatars={avatars} />
 
           <Divider className="my-3" />
 
@@ -243,8 +291,6 @@ export default function LiarsDiceGame({
           ) : (
             <Hint className="text-center py-4">Waiting on {who(v.turnPlayerId!)}…</Hint>
           )}
-
-          {v.lastChallenge && <Reveal result={v.lastChallenge} names={names} />}
         </>
       )}
     </Screen>

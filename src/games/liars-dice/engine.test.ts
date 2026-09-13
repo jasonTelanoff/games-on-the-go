@@ -88,7 +88,7 @@ test('cannot challenge with no bid on the table', () => {
   assert.throws(() => applyAction(s, 'a', { type: 'challenge' }), IllegalActionError);
 });
 
-test('challenge: bid stands (ones wild) -> challenger loses a die, starts next round', () => {
+test('challenge: bid stands (ones wild) -> reveal holds, then challenger loses a die and starts next round', () => {
   // a: 4,4,2,3,5   b: 4,1,2,3,6  -> four 4s counting the wild one.
   const s0 = createGame(['a', 'b'], rigged([4, 4, 2, 3, 5, 4, 1, 2, 3, 6]));
   const s1 = applyAction(s0, 'a', bid('a', 3, 4)).state;
@@ -99,13 +99,22 @@ test('challenge: bid stands (ones wild) -> challenger loses a die, starts next r
   assert.equal(result.bidStood, true);
   assert.equal(result.loserId, 'b');
 
-  const b = s2.players.find((p) => p.id === 'b')!;
-  const a = s2.players.find((p) => p.id === 'a')!;
+  // Reveal holds: no dice removed yet, round not advanced, no bids allowed.
+  assert.equal(s2.phase, 'reveal');
+  assert.equal(s2.players.find((p) => p.id === 'b')!.dice.length, 5);
+  assert.equal(s2.round, 1);
+  assert.throws(() => applyAction(s2, 'a', bid('a', 4, 4)), IllegalActionError);
+  assert.throws(() => applyAction(s2, 'b', { type: 'challenge' }), IllegalActionError);
+
+  // Anyone still in the game can continue.
+  const { state: s3 } = applyAction(s2, 'a', { type: 'continue' }, rigged([2]));
+  const b = s3.players.find((p) => p.id === 'b')!;
+  const a = s3.players.find((p) => p.id === 'a')!;
   assert.equal(b.dice.length, 4);
   assert.equal(a.dice.length, 5);
-  assert.equal(s2.round, 2);
-  assert.equal(currentPlayerId(s2), 'b'); // loser starts
-  assert.equal(s2.currentBid, null);
+  assert.equal(s3.round, 2);
+  assert.equal(currentPlayerId(s3), 'b'); // loser starts
+  assert.equal(s3.currentBid, null);
 });
 
 test('challenge: bid fails -> bidder loses a die and starts', () => {
@@ -118,8 +127,11 @@ test('challenge: bid fails -> bidder loses a die and starts', () => {
   assert.equal(result.actualCount, 0);
   assert.equal(result.bidStood, false);
   assert.equal(result.loserId, 'a');
-  assert.equal(s2.players.find((p) => p.id === 'a')!.dice.length, 4);
-  assert.equal(currentPlayerId(s2), 'a');
+  assert.equal(s2.phase, 'reveal');
+
+  const { state: s3 } = applyAction(s2, 'b', { type: 'continue' }, rigged([2]));
+  assert.equal(s3.players.find((p) => p.id === 'a')!.dice.length, 4);
+  assert.equal(currentPlayerId(s3), 'a');
 });
 
 test('plays a full game to elimination with all dice showing 3', () => {
@@ -132,13 +144,25 @@ test('plays a full game to elimination with all dice showing 3', () => {
     s = applyAction(s, me, bid(me, 1, 2), rigged([3])).state;
     const next = currentPlayerId(s);
     const res = applyAction(s, next, { type: 'challenge' }, rigged([3]));
-    s = res.state;
-    if (res.events.some((e) => e.type === 'playerEliminated')) break;
+    assert.equal(res.state.phase, 'reveal');
+    const cont = applyAction(res.state, next, { type: 'continue' }, rigged([3]));
+    s = cont.state;
+    if (cont.events.some((e) => e.type === 'playerEliminated')) break;
   }
   // 'a' lost 5 dice across 5 rounds and is out; 'b' wins.
   assert.equal(s.phase, 'gameOver');
   assert.equal(s.winnerId, 'b');
   assert.equal(s.players.length, 1);
+});
+
+test('continue: only players in the game can continue, and only once', () => {
+  const s0 = createGame(['a', 'b'], rigged([3]));
+  const s1 = applyAction(s0, 'a', bid('a', 1, 2)).state;
+  const s2 = applyAction(s1, 'b', { type: 'challenge' }).state;
+  assert.throws(() => applyAction(s2, 'ghost', { type: 'continue' }), IllegalActionError);
+  const s3 = applyAction(s2, 'b', { type: 'continue' }, rigged([3])).state;
+  assert.equal(s3.phase, 'bidding');
+  assert.throws(() => applyAction(s3, 'a', { type: 'continue' }), IllegalActionError);
 });
 
 test('views hide other players dice', () => {
@@ -161,6 +185,7 @@ test('actions after game over throw', () => {
     const me = currentPlayerId(s);
     s = applyAction(s, me, bid(me, 1, 2), rigged([3])).state;
     s = applyAction(s, currentPlayerId(s), { type: 'challenge' }, rigged([3])).state;
+    s = applyAction(s, s.players[0].id, { type: 'continue' }, rigged([3])).state;
   }
   assert.equal(s.phase, 'gameOver');
   assert.throws(() => applyAction(s, s.players[0].id, bid(s.players[0].id, 1, 2)));
