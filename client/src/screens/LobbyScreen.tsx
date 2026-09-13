@@ -11,6 +11,7 @@ import {
   StickyBar,
   Sub,
   Title,
+  cx,
 } from '../components/ui.js';
 
 interface Props {
@@ -64,25 +65,6 @@ export default function LobbyScreen({
 
       {tablePhase === 'lobby' && (
         <>
-          {games.length > 0 && (
-            <>
-              <Label>Game</Label>
-              <Row className="my-2">
-                {games.map((g) => (
-                  <Button
-                    key={g.id}
-                    size="sm"
-                    selected={g.id === gameId}
-                    disabled={!isHost}
-                    onClick={() => onSelectGame(g.id)}
-                  >
-                    {g.name}
-                  </Button>
-                ))}
-              </Row>
-            </>
-          )}
-
           <ul className="list-none p-0 m-0 mt-2">
             {players.map((p) => (
               <li
@@ -100,6 +82,44 @@ export default function LobbyScreen({
               </li>
             ))}
           </ul>
+
+          {games.length > 0 && (
+            <div className="mt-5">
+              <Label>Game</Label>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {games.map((g) => {
+                  const selected = g.id === gameId;
+                  return (
+                    <button
+                      key={g.id}
+                      type="button"
+                      disabled={!isHost}
+                      onClick={() => onSelectGame(g.id)}
+                      className={cx(
+                        'flex flex-col items-center justify-center gap-1.5 rounded-2xl border px-3 py-5 min-h-[104px] select-none transition-all',
+                        selected
+                          ? 'border-accent bg-accent/10'
+                          : 'border-line/70',
+                        isHost ? 'cursor-pointer active:scale-[0.97]' : 'cursor-default',
+                        !isHost && !selected && 'opacity-45',
+                      )}
+                    >
+                      <span className="text-[36px] leading-none">{g.icon}</span>
+                      <span
+                        className={cx(
+                          'text-[15px] font-semibold',
+                          selected ? 'text-accent-soft' : 'text-ink',
+                        )}
+                      >
+                        {g.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {!isHost && <Hint className="mt-1.5">The host picks the game</Hint>}
+            </div>
+          )}
         </>
       )}
 

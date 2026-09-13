@@ -37,8 +37,8 @@ export interface Table {
   lastEvents: GameEvent[];
 }
 
-export function gameList(): { id: string; name: string }[] {
-  return games.map((g) => ({ id: g.id, name: g.name }));
+export function gameList(): { id: string; name: string; icon: string }[] {
+  return games.map((g) => ({ id: g.id, name: g.name, icon: g.icon }));
 }
 
 export class TableManager {

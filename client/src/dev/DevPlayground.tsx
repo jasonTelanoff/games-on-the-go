@@ -5,7 +5,7 @@
  * Nothing here touches the network.
  */
 import { useState } from 'react';
-import { GAME_COMPONENTS, GAME_NAMES } from '../games/index.js';
+import { GAME_COMPONENTS, GAME_ICONS, GAME_NAMES } from '../games/index.js';
 import LobbyScreen from '../screens/LobbyScreen.js';
 import { Button, Chip, Hint, Row, Screen, TopBar } from '../components/ui.js';
 import { DEV_NAMES, DEV_SCENARIOS } from './mocks.js';
@@ -121,7 +121,7 @@ export default function DevPlayground() {
 
       {tab.kind === 'lobby' && (
         <LobbyScreen
-          games={gameIds.map((id) => ({ id, name: GAME_NAMES[id] ?? id }))}
+          games={gameIds.map((id) => ({ id, name: GAME_NAMES[id] ?? id, icon: GAME_ICONS[id] ?? '🎮' }))}
           gameId={gameIds[0]}
           gameName={GAME_NAMES[gameIds[0]] ?? gameIds[0]}
           players={MOCK_PLAYERS}

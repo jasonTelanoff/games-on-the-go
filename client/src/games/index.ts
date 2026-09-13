@@ -10,3 +10,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType<GameScreenProps>> = {
 export const GAME_NAMES: Record<string, string> = {
   'liars-dice': "Liar's Dice",
 };
+
+export const GAME_ICONS: Record<string, string> = {
+  'liars-dice': '🎲',
+};

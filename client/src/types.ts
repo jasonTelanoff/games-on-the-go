@@ -13,6 +13,7 @@ export interface LobbyPlayer {
 export interface GameOption {
   id: string;
   name: string;
+  icon: string;
 }
 
 export interface AppState {

@@ -25,6 +25,8 @@ export interface ActionResult<S> {
 export interface GameDefinition<S, A, V> {
   id: string;
   name: string;
+  /** Emoji placeholder shown in the game picker until real art lands. */
+  icon: string;
   minPlayers: number;
   maxPlayers: number;
 
@@ -64,7 +66,7 @@ export type ServerMessage =
   | { kind: 'welcome'; playerId: string; isHost: boolean }
   | {
       kind: 'lobby';
-      games: { id: string; name: string }[];
+      games: { id: string; name: string; icon: string }[];
       gameId: string;
       hostId: string | null;
       players: { id: string; name: string; avatarId: string; connected: boolean }[];

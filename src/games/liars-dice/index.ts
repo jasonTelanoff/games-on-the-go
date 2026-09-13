@@ -15,6 +15,7 @@ import {
 export const liarsDice: GameDefinition<GameState, Action, PlayerView> = {
   id: 'liars-dice',
   name: "Liar's Dice",
+  icon: '🎲',
   minPlayers: 2,
   maxPlayers: 8,
 

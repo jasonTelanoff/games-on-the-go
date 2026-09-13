@@ -11,7 +11,7 @@ import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react
 import { dieGlyph } from '../ui.js';
 import { AVATARS } from '../../../src/avatars.js';
 
-function cx(...parts: Array<string | false | null | undefined>): string {
+export function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(' ');
 }
 
