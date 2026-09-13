@@ -8,7 +8,6 @@
  * sticky bottom bar. Everything is thumb-sized (min 44px targets).
  */
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
-import { dieGlyph } from '../ui.js';
 import { AVATARS } from '../../../src/avatars.js';
 
 export function cx(...parts: Array<string | false | null | undefined>): string {
