@@ -197,24 +197,34 @@ const DIE_PIP: Record<string, string> = {
   lg: 'w-[11px] h-[11px]',
 };
 
+const DIE_TONE: Record<string, string> = {
+  plain: 'bg-[#eef0f3]',
+  natural: 'bg-natural',
+  wild: 'bg-wild',
+};
+
 /**
  * A real drawn die — fixed geometry at every size, so pips never clip
  * the border the way font glyphs do. White die, ink pips.
+ * Tone tints the die: natural (matches the called face) or wild (ones).
  */
 export function Die({
   value,
   size = 'md',
+  tone = 'plain',
 }: {
   value: number;
   size?: 'sm' | 'md' | 'lg';
+  tone?: 'plain' | 'natural' | 'wild';
 }) {
   const pips = PIPS[value] ?? PIPS[1];
   return (
     <span
       className={cx(
         'inline-grid grid-cols-3 grid-rows-3 flex-none select-none',
-        'rounded-[26%] bg-[#eef0f3]',
+        'rounded-[26%]',
         'shadow-[inset_0_-2px_3px_rgba(0,0,0,0.18)]',
+        DIE_TONE[tone],
         DIE_BOX[size],
       )}
       aria-label={`Die showing ${value}`}

@@ -80,6 +80,9 @@ function RevealScreen({ result, names, playerId, sendAction }: {
   const who = (id: string) => names[id] ?? '???';
   const [continuing, setContinuing] = useState(false);
   const loserSet = new Set(result.loserIds);
+  const allDice = result.revealed.flatMap((r) => r.dice);
+  const natural = allDice.filter((d) => d === result.bid.face).length;
+  const wild = allDice.filter((d) => d === 1).length;
   const eliminatedIds = result.revealed
     .filter((r) => loserSet.has(r.playerId) && r.dice.length <= 1)
     .map((r) => r.playerId);
@@ -99,8 +102,19 @@ function RevealScreen({ result, names, playerId, sendAction }: {
         <div className="text-[30px] font-bold tracking-tight leading-none inline-flex items-center gap-2">
           {result.bid.quantity} × <Die size="sm" value={result.bid.face} />
         </div>
-        <div className="text-muted text-[14px] mt-2">
-          Actual: {result.actualCount} <span className="text-muted/70">(ones are wild)</span>
+        <div className="flex justify-center gap-8 mt-4">
+          <div>
+            <div className="text-[22px] font-bold text-natural tabular-nums">{natural}</div>
+            <div className="text-[12px] text-muted">natural</div>
+          </div>
+          <div>
+            <div className="text-[22px] font-bold text-wild tabular-nums">{wild}</div>
+            <div className="text-[12px] text-muted">wild</div>
+          </div>
+          <div>
+            <div className="text-[22px] font-bold tabular-nums">{natural + wild}</div>
+            <div className="text-[12px] text-muted">total</div>
+          </div>
         </div>
       </div>
 
@@ -114,7 +128,12 @@ function RevealScreen({ result, names, playerId, sendAction }: {
           </span>
           <div className="flex gap-1 flex-wrap mt-1.5">
             {row.dice.map((d, i) => (
-              <Die size="sm" value={d} key={i} />
+              <Die
+                size="sm"
+                value={d}
+                key={i}
+                tone={d === result.bid.face ? 'natural' : d === 1 ? 'wild' : 'plain'}
+              />
             ))}
           </div>
         </div>

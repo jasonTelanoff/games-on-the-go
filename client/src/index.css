@@ -14,6 +14,8 @@
   --color-warn-bg: #3a2b1a;
   --color-warn-line: #8a6420;
   --color-warn-ink: #ffd98a;
+  --color-natural: #43a665;
+  --color-wild: #e2a93d;
 }
 
 @layer base {
