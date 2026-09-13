@@ -32,7 +32,10 @@ const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
 };
 
 const BUTTON_SIZES: Record<ButtonSize, string> = {
-  md: 'flex-1 min-h-[52px] px-5 text-[17px] rounded-xl',
+  // No flex-1 here: as a direct child of a column flex container it would
+  // stretch vertically (that's how "Back to lobby" filled the screen).
+  // Row layouts opt into growing with their own flex classes.
+  md: 'min-h-[52px] px-5 text-[17px] rounded-xl',
   sm: 'min-h-[44px] px-4 text-[15px] rounded-xl',
   face: 'flex-1 h-16 rounded-xl text-[34px] leading-none',
 };
@@ -171,6 +174,34 @@ export function Avatar({ id, size = 'md' }: { id: string; size?: 'sm' | 'md' | '
 
 // ---------------------------------------------------------------- Dice
 
+// ------------------------------------------------------------------- Die
+
+/** Pip maps on a 3x3 grid, row-major. */
+const PIPS: Record<number, number[]> = {
+  1: [0, 0, 0, 0, 1, 0, 0, 0, 0],
+  2: [1, 0, 0, 0, 0, 0, 0, 0, 1],
+  3: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+  4: [1, 0, 1, 0, 0, 0, 1, 0, 1],
+  5: [1, 0, 1, 0, 1, 0, 1, 0, 1],
+  6: [1, 0, 1, 1, 0, 1, 1, 0, 1],
+};
+
+const DIE_BOX: Record<string, string> = {
+  sm: 'w-[26px] h-[26px]',
+  md: 'w-[40px] h-[40px]',
+  lg: 'w-[56px] h-[56px]',
+};
+
+const DIE_PIP: Record<string, string> = {
+  sm: 'w-[5px] h-[5px]',
+  md: 'w-[8px] h-[8px]',
+  lg: 'w-[11px] h-[11px]',
+};
+
+/**
+ * A real drawn die — fixed geometry at every size, so pips never clip
+ * the border the way font glyphs do. White die, ink pips.
+ */
 export function Die({
   value,
   size = 'md',
@@ -178,7 +209,22 @@ export function Die({
   value: number;
   size?: 'sm' | 'md' | 'lg';
 }) {
-  const cls =
-    size === 'lg' ? 'text-[54px] leading-none' : size === 'sm' ? 'text-[26px] leading-none' : 'text-[44px] leading-none';
-  return <span className={cls}>{dieGlyph(value)}</span>;
+  const pips = PIPS[value] ?? PIPS[1];
+  return (
+    <span
+      className={cx(
+        'inline-grid grid-cols-3 grid-rows-3 shrink-0 select-none',
+        'rounded-[26%] bg-[#eef0f3] p-[16%]',
+        'shadow-[inset_0_-2px_3px_rgba(0,0,0,0.18)]',
+        DIE_BOX[size],
+      )}
+      aria-label={`Die showing ${value}`}
+    >
+      {pips.map((on, i) => (
+        <span className="flex items-center justify-center" key={i}>
+          {on === 1 && <span className={cx('rounded-full bg-[#1d2129]', DIE_PIP[size])} />}
+        </span>
+      ))}
+    </span>
+  );
 }
