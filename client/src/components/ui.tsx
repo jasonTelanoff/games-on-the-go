@@ -186,9 +186,9 @@ const PIPS: Record<number, number[]> = {
 };
 
 const DIE_BOX: Record<string, string> = {
-  sm: 'w-[26px] h-[26px]',
-  md: 'w-[40px] h-[40px]',
-  lg: 'w-[56px] h-[56px]',
+  sm: 'w-[26px] h-[26px] p-[4px]',
+  md: 'w-[40px] h-[40px] p-[6px]',
+  lg: 'w-[56px] h-[56px] p-[9px]',
 };
 
 const DIE_PIP: Record<string, string> = {
@@ -212,8 +212,8 @@ export function Die({
   return (
     <span
       className={cx(
-        'inline-grid grid-cols-3 grid-rows-3 shrink-0 select-none',
-        'rounded-[26%] bg-[#eef0f3] p-[16%]',
+        'inline-grid grid-cols-3 grid-rows-3 flex-none select-none',
+        'rounded-[26%] bg-[#eef0f3]',
         'shadow-[inset_0_-2px_3px_rgba(0,0,0,0.18)]',
         DIE_BOX[size],
       )}
