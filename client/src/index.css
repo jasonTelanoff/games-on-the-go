@@ -4,7 +4,7 @@
 
 body {
   margin: 0;
-  background: #282a2c;
+  background: #121313;
   color: #eef0f3;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-tap-highlight-color: transparent;
@@ -18,8 +18,8 @@ body {
 }
 
 .card {
-  background: #1d2226;
-  border: 1px solid #2c313a;
+  background: #1f2023;
+  /* border: 1px solid #2c313a; */
   border-radius: 14px;
   padding: 20px;
   margin-bottom: 16px;
@@ -42,10 +42,10 @@ body {
   padding: 14px;
   font-size: 17px;
   border-radius: 10px;
-  border: 1px solid #2c313a;
+  border: 0px solid #2c313a;
   background: #12141a;
-  color: #eef0f3;
-  margin-bottom: 4px;
+  /* color: #eef0f3; */
+  margin-bottom: 16px;
 }
 
 .field.code {
@@ -80,7 +80,7 @@ body {
 
 .btn:active { transform: scale(0.98); }
 
-.btn.primary { background: #4f7cff; }
+.btn.primary { background: #1e4cd7; }
 .btn.danger { background: #b3402e; margin-top: 10px; }
 .btn.small { flex: 0 0 52px; font-size: 24px; }
 .btn.face { font-size: 30px; padding: 8px; }
