@@ -4,7 +4,7 @@
 
 body {
   margin: 0;
-  background: #14161a;
+  background: #282a2c;
   color: #eef0f3;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-tap-highlight-color: transparent;
@@ -18,7 +18,7 @@ body {
 }
 
 .card {
-  background: #1d2026;
+  background: #1d2226;
   border: 1px solid #2c313a;
   border-radius: 14px;
   padding: 20px;
