@@ -54,7 +54,7 @@ export interface GameDefinition<S, A, V> {
 // ---------------------------------------------------------------------------
 
 export type ClientMessage =
-  | { kind: 'hello'; playerName: string }
+  | { kind: 'hello'; playerName: string; avatarId?: string }
   | { kind: 'selectGame'; gameId: string }
   | { kind: 'startGame' }
   | { kind: 'toLobby' }
@@ -67,7 +67,7 @@ export type ServerMessage =
       games: { id: string; name: string }[];
       gameId: string;
       hostId: string | null;
-      players: { id: string; name: string; connected: boolean }[];
+      players: { id: string; name: string; avatarId: string; connected: boolean }[];
       /** lobby | playing | paused (a disconnect pauses; host can lobby-ify) */
       phase: 'lobby' | 'playing' | 'paused';
     }

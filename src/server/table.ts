@@ -12,6 +12,7 @@
  * between this and the wire. See table.test.ts.
  */
 import { GameDefinition, GameEvent, Rand } from '../framework.js';
+import { firstFreeAvatar, isAvatarId } from '../avatars.js';
 import { games } from '../games/liars-dice/index.js';
 
 export class TableError extends Error {}
@@ -19,6 +20,7 @@ export class TableError extends Error {}
 export interface TablePlayer {
   id: string;
   name: string;
+  avatarId: string;
   connected: boolean;
 }
 
@@ -78,8 +80,12 @@ export class TableManager {
    * New names join; existing names rejoin and reclaim their seat
    * (same id) — but only if the original is gone. Joining with a
    * connected player's name is rejected, not a hijack.
+   *
+   * Avatars can't be duplicated: a claimed avatar stays with its seat
+   * even while disconnected, so a rejoin always gets its avatar back
+   * and nobody can snipe it mid-game.
    */
-  join(playerName: string): TablePlayer {
+  join(playerName: string, avatarId?: string): TablePlayer {
     const t = this.table;
     const name = playerName.slice(0, 20).trim() || 'Player';
     const existing = t.players.find((p) => p.name.toLowerCase() === name.toLowerCase());
@@ -87,12 +93,21 @@ export class TableManager {
       if (existing.connected) throw new TableError(`"${existing.name}" is already here`);
       existing.connected = true;
       if (t.hostId === null) t.hostId = existing.id;
-      return existing;
+      return existing; // seat keeps its avatar — requested one is ignored
     }
     if (t.players.length >= this.currentGame().maxPlayers) {
       throw new TableError('Table is full');
     }
-    const player: TablePlayer = { id: crypto.randomUUID(), name, connected: true };
+    const taken = new Set(t.players.map((p) => p.avatarId));
+    let avatar: string;
+    if (avatarId === undefined) {
+      avatar = firstFreeAvatar(taken);
+    } else {
+      if (!isAvatarId(avatarId)) throw new TableError('Unknown avatar');
+      if (taken.has(avatarId)) throw new TableError('That avatar is taken');
+      avatar = avatarId;
+    }
+    const player: TablePlayer = { id: crypto.randomUUID(), name, avatarId: avatar, connected: true };
     t.players.push(player);
     if (t.hostId === null) t.hostId = player.id;
     return player;

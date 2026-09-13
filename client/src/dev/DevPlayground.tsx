@@ -12,10 +12,16 @@ import { DEV_NAMES, DEV_SCENARIOS } from './mocks.js';
 import type { LobbyPlayer } from '../types.js';
 
 const MOCK_PLAYERS: LobbyPlayer[] = [
-  { id: 'p-ana', name: 'Ana', connected: true },
-  { id: 'p-ben', name: 'Ben', connected: true },
-  { id: 'p-cat', name: 'Cat', connected: false },
+  { id: 'p-ana', name: 'Ana', avatarId: 'fox', connected: true },
+  { id: 'p-ben', name: 'Ben', avatarId: 'panda', connected: true },
+  { id: 'p-cat', name: 'Cat', avatarId: 'frog', connected: false },
 ];
+
+const MOCK_AVATARS: Record<string, string> = {
+  'p-ana': 'fox',
+  'p-ben': 'panda',
+  'p-cat': 'frog',
+};
 
 type Tab = { kind: 'game'; gameId: string } | { kind: 'lobby' };
 
@@ -105,6 +111,7 @@ export default function DevPlayground() {
               isHost={s.isHost}
               paused={s.paused}
               names={DEV_NAMES}
+              avatars={MOCK_AVATARS}
               sendAction={(a) => log('action', a)}
               onBackToLobby={() => log('nav', 'backToLobby')}
               onToLobby={() => log('nav', 'toLobby')}

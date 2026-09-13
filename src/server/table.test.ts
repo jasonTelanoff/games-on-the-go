@@ -136,3 +136,31 @@ test('table capacity follows the selected game', () => {
   for (let i = 0; i < 8; i++) mgr.join(`P${i}`);
   assert.throws(() => mgr.join('Extra'), TableError); // liars-dice max is 8
 });
+
+test('avatars are assigned, unique, and never duplicated', () => {
+  const mgr = new TableManager();
+  const ana = mgr.join('Ana', 'fox');
+  assert.equal(ana.avatarId, 'fox');
+  assert.throws(() => mgr.join('Ben', 'fox'), TableError); // taken
+  const ben = mgr.join('Ben', 'panda');
+  assert.equal(ben.avatarId, 'panda');
+});
+
+test('unknown avatars are rejected; missing ones auto-assign', () => {
+  const mgr = new TableManager();
+  assert.throws(() => mgr.join('Ana', 'dragon'), TableError);
+  const ben = mgr.join('Ben'); // no avatar requested
+  assert.ok(ben.avatarId.length > 0);
+  const cat = mgr.join('Cat'); // auto-assign skips taken
+  assert.ok(cat.avatarId !== ben.avatarId);
+});
+
+test('a disconnected seat keeps its avatar; rejoin reclaims it', () => {
+  const mgr = new TableManager();
+  const ana = mgr.join('Ana', 'fox');
+  mgr.disconnect(ana.id);
+  assert.throws(() => mgr.join('Ben', 'fox'), TableError); // still Ana's
+  const ana2 = mgr.join('ana', 'panda'); // rejoin ignores the new pick
+  assert.equal(ana2.id, ana.id);
+  assert.equal(ana2.avatarId, 'fox');
+});

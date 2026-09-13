@@ -1,5 +1,6 @@
 import type { GameOption, LobbyPlayer, TablePhase } from '../types.js';
 import {
+  Avatar,
   Button,
   Chip,
   Hint,
@@ -84,13 +85,16 @@ export default function LobbyScreen({
           <ul className="list-none p-0 m-0 mt-2">
             {players.map((p) => (
               <li
-                className="flex items-center justify-between gap-2 py-3 border-b border-line/60 first:border-t"
+                className="flex items-center justify-between gap-2 py-2.5 border-b border-line/60 first:border-t"
                 key={p.id}
               >
-                <span className="text-[17px]">
-                  {p.name}
-                  {p.id === playerId && <span className="text-muted"> · you</span>}
-                </span>
+                <Row>
+                  <Avatar id={p.avatarId} size="sm" />
+                  <span className="text-[17px]">
+                    {p.name}
+                    {p.id === playerId && <span className="text-muted"> · you</span>}
+                  </span>
+                </Row>
                 {!p.connected && <Chip>disconnected</Chip>}
               </li>
             ))}

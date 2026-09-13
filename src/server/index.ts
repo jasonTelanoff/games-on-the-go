@@ -91,7 +91,7 @@ export async function startServer(port: number): Promise<RunningServer> {
       games: gameList(),
       gameId: t.gameId,
       hostId: t.hostId,
-      players: t.players.map((p) => ({ id: p.id, name: p.name, connected: p.connected })),
+      players: t.players.map((p) => ({ id: p.id, name: p.name, avatarId: p.avatarId, connected: p.connected })),
       phase: t.phase,
     };
     for (const c of conns) send(c, msg);
@@ -125,7 +125,7 @@ export async function startServer(port: number): Promise<RunningServer> {
       try {
         switch (msg.kind) {
           case 'hello': {
-            const player = mgr.join(msg.playerName);
+            const player = mgr.join(msg.playerName, msg.avatarId);
             conn.playerId = player.id;
             send(conn, { kind: 'welcome', playerId: player.id, isHost: mgr.isHost(player.id) });
             const resumed = mgr.tryResume();

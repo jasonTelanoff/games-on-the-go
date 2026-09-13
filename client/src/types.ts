@@ -6,6 +6,7 @@ export type TablePhase = 'lobby' | 'playing' | 'paused';
 export interface LobbyPlayer {
   id: string;
   name: string;
+  avatarId: string;
   connected: boolean;
 }
 
@@ -24,6 +25,7 @@ export interface AppState {
   hostId: string | null;
   lobbyPlayers: LobbyPlayer[];
   names: Record<string, string>;
+  avatars: Record<string, string>;
   view: PlayerView | null;
   notice: string;
 }

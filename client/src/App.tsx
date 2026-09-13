@@ -33,6 +33,7 @@ const initial: AppState = {
   hostId: null,
   lobbyPlayers: [],
   names: {},
+  avatars: {},
   view: null,
   notice: '',
 };
@@ -71,7 +72,11 @@ export default function App() {
           return { ...s, playerId: msg.playerId };
         case 'lobby': {
           const names: Record<string, string> = {};
-          for (const p of msg.players) names[p.id] = p.name;
+          const avatars: Record<string, string> = {};
+          for (const p of msg.players) {
+            names[p.id] = p.name;
+            avatars[p.id] = p.avatarId;
+          }
           return {
             ...s,
             games: msg.games,
@@ -80,6 +85,7 @@ export default function App() {
             lobbyPlayers: msg.players,
             tablePhase: msg.phase,
             names,
+            avatars,
             // Don't yank the game-over screen away when the lobby reforms.
             screen: s.screen === 'game' ? 'game' : 'lobby',
           };
@@ -92,13 +98,13 @@ export default function App() {
     });
   };
 
-  const join = (playerName: string) => {
+  const join = (playerName: string, avatarId: string) => {
     if (!playerName.trim()) {
       setState((s) => ({ ...s, notice: 'Enter a name first.' }));
       return;
     }
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      send({ kind: 'hello', playerName });
+      send({ kind: 'hello', playerName, avatarId });
       return;
     }
     setState((s) => ({ ...s, notice: 'Connecting…' }));
@@ -106,7 +112,7 @@ export default function App() {
     wsRef.current = ws;
     ws.onopen = () => {
       setState((s) => ({ ...s, notice: '' }));
-      send({ kind: 'hello', playerName });
+      send({ kind: 'hello', playerName, avatarId });
     };
     ws.onmessage = (e) => onMessage(JSON.parse(e.data as string) as ServerMessage);
     ws.onclose = () => {
@@ -152,6 +158,7 @@ export default function App() {
           isHost={isHost}
           paused={paused}
           names={state.names}
+          avatars={state.avatars}
           sendAction={(action) => send({ kind: 'action', action })}
           onBackToLobby={backToLobby}
           onToLobby={() => send({ kind: 'toLobby' })}

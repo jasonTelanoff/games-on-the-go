@@ -80,6 +80,14 @@ separated by hairline dividers, the header is a sticky blurred bar, and
 primary actions sit in a sticky bottom bar (`StickyBar`) where thumbs
 can reach them. One accent color, used sparingly.
 
+Avatars live in `src/avatars.ts` (shared by server and client). Each
+player picks one on the connect screen; the server rejects duplicates —
+a claimed avatar stays with its seat even across disconnects, so
+rejoining always restores it. The art is placeholder emoji until Jason's
+drawings land: swap `glyph` for an image source in the registry and
+update the `Avatar` component in `ui.tsx` (the only place that renders
+one).
+
 ## Design notes
 
 - The engine is pure: `(state, playerId, action, rand?) -> { state, events }`.

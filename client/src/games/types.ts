@@ -11,6 +11,7 @@ export interface GameScreenProps {
   /** True when a disconnect paused the game. */
   paused: boolean;
   names: Record<string, string>;
+  avatars: Record<string, string>;
   sendAction: (action: unknown) => void;
   onBackToLobby: () => void;
   onToLobby: () => void;

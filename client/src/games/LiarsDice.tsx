@@ -8,6 +8,7 @@ import {
 } from '../../../src/games/liars-dice/engine.js';
 import type { GameScreenProps } from './types.js';
 import {
+  Avatar,
   Button,
   Chip,
   Die,
@@ -83,9 +84,13 @@ function TurnControls({ view, playerId, sendAction }: {
     <>
       <Label>Your bid</Label>
       <Row className="justify-center my-3">
-        <Button size="sm" className="w-[52px] text-[22px]" onClick={() => setQty((q) => Math.max(1, q - 1))}>−</Button>
+        <div className="w-[52px] shrink-0">
+          <Button size="sm" className="text-[22px]" onClick={() => setQty((q) => Math.max(1, q - 1))}>−</Button>
+        </div>
         <span className="w-16 text-center text-[30px] font-bold tabular-nums">{clampedQty}</span>
-        <Button size="sm" className="w-[52px] text-[22px]" onClick={() => setQty((q) => Math.min(max, q + 1))}>+</Button>
+        <div className="w-[52px] shrink-0">
+          <Button size="sm" className="text-[22px]" onClick={() => setQty((q) => Math.min(max, q + 1))}>+</Button>
+        </div>
       </Row>
       <div className="flex gap-2 my-3">
         {([2, 3, 4, 5, 6] as BidFace[]).map((f) => (
@@ -106,19 +111,23 @@ function TurnControls({ view, playerId, sendAction }: {
       )}
 
       <StickyBar>
-        <Button
-          variant="primary"
-          disabled={!legal}
-          onClick={() => sendAction({ type: 'bid', quantity: clampedQty, face })}
-        >
-          <span className="inline-flex items-center gap-1.5">
-            Bid {clampedQty} × <Die size="sm" value={face} />
-          </span>
-        </Button>
-        {view.currentBid && (
-          <Button variant="danger" onClick={() => sendAction({ type: 'challenge' })}>
-            Liar!
+        <div className="flex-[2]">
+          <Button
+            variant="primary"
+            disabled={!legal}
+            onClick={() => sendAction({ type: 'bid', quantity: clampedQty, face })}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              Bid {clampedQty} × <Die size="sm" value={face} />
+            </span>
           </Button>
+        </div>
+        {view.currentBid && (
+          <div className="flex-1">
+            <Button variant="danger" onClick={() => sendAction({ type: 'challenge' })}>
+              Liar!
+            </Button>
+          </div>
         )}
       </StickyBar>
     </>
@@ -131,6 +140,7 @@ export default function LiarsDiceGame({
   isHost,
   paused,
   names,
+  avatars,
   sendAction,
   onBackToLobby,
   onToLobby,
@@ -170,18 +180,19 @@ export default function LiarsDiceGame({
         </div>
       ) : (
         <>
-          {/* Players: active turn gets the accent dot. */}
+          {/* Players: your avatar marks you, the accent ring marks the turn. */}
           <div className="flex gap-5 overflow-x-auto py-2">
             {v.players.map((p) => {
               const active = p.id === v.turnPlayerId;
               return (
-                <div className="flex flex-col items-center min-w-[52px]" key={p.id}>
-                  <span
-                    className={
-                      'w-1.5 h-1.5 rounded-full mb-1.5 ' + (active ? 'bg-accent' : 'bg-transparent')
-                    }
-                  />
-                  <span className={'text-[13px] max-w-[72px] truncate ' + (active ? 'font-semibold text-ink' : 'text-muted')}>
+                <div
+                  className={'flex flex-col items-center min-w-[52px] ' + (active ? '' : 'opacity-50')}
+                  key={p.id}
+                >
+                  <span className={'rounded-full p-0.5 ' + (active ? 'ring-2 ring-accent' : '')}>
+                    <Avatar id={avatars[p.id]} />
+                  </span>
+                  <span className={'text-[13px] max-w-[72px] truncate mt-1 ' + (active ? 'font-semibold text-ink' : 'text-muted')}>
                     {who(p.id)}
                   </span>
                   <span className="text-[12px] text-muted mt-0.5 tabular-nums">🎲 {p.diceCount}</span>

@@ -9,6 +9,7 @@
  */
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
 import { dieGlyph } from '../ui.js';
+import { AVATARS } from '../../../src/avatars.js';
 
 function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(' ');
@@ -148,6 +149,23 @@ export function Field(props: InputHTMLAttributes<HTMLInputElement>) {
       )}
       {...rest}
     />
+  );
+}
+
+// ---------------------------------------------------------------- Avatar
+
+/**
+ * Renders an avatar by id from the shared registry. When Jason's art
+ * lands, this is the one place that switches from glyph to <img>.
+ */
+export function Avatar({ id, size = 'md' }: { id: string; size?: 'sm' | 'md' | 'lg' }) {
+  const def = AVATARS.find((a) => a.id === id) ?? AVATARS[0];
+  const cls =
+    size === 'lg' ? 'text-[44px] leading-none' : size === 'sm' ? 'text-[22px] leading-none' : 'text-[30px] leading-none';
+  return (
+    <span className={cls} role="img" aria-label={def.label}>
+      {def.glyph}
+    </span>
   );
 }
 
