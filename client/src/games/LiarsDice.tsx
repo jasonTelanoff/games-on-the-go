@@ -7,6 +7,7 @@ import {
   isLegalBid,
 } from '../../../src/games/liars-dice/engine.js';
 import type { GameScreenProps } from './types.js';
+import { Button, Card, Chip, Die, Hint, Label, Notice, Row, Title, TopBar } from '../components/ui.js';
 import { dieGlyph } from '../ui.js';
 
 function totalDice(v: PlayerView): number {
@@ -36,19 +37,19 @@ function challengeText(r: ChallengeResult, names: Record<string, string>): strin
 function Reveal({ result, names }: { result: ChallengeResult; names: Record<string, string> }) {
   const who = (id: string) => names[id] ?? '???';
   return (
-    <div className="reveal">
-      <p className="rtext">{challengeText(result, names)}</p>
+    <div className="mt-4 bg-deep border border-line rounded-[10px] p-3">
+      <p className="my-1.5 mb-2.5 text-[15px]">{challengeText(result, names)}</p>
       {result.revealed.map((row) => (
-        <div className="rrow" key={row.playerId}>
-          <span className="rname">{who(row.playerId)}</span>
-          <span className="rdice">
+        <div className="flex justify-between items-center py-1" key={row.playerId}>
+          <span className="text-[15px]">{who(row.playerId)}</span>
+          <span className="flex gap-1">
             {row.dice.map((d, i) => (
-              <span className="die sm" key={i}>{dieGlyph(d)}</span>
+              <Die small value={d} key={i} />
             ))}
           </span>
         </div>
       ))}
-      {result.eliminatedId && <p className="rtext">{who(result.eliminatedId)} is out!</p>}
+      {result.eliminatedId && <p className="my-1.5 mb-2.5 text-[15px]">{who(result.eliminatedId)} is out!</p>}
     </div>
   );
 }
@@ -65,32 +66,33 @@ function BidControls({ view, playerId, sendAction }: {
   const legal = isLegalBid(pseudoState(view), playerId, clampedQty, face);
 
   return (
-    <div className="bidctl">
-      <div className="row">
-        <button className="btn small" onClick={() => setQty((q) => Math.max(1, q - 1))}>−</button>
-        <span className="qty">{clampedQty}</span>
-        <button className="btn small" onClick={() => setQty((q) => Math.min(max, q + 1))}>+</button>
-      </div>
-      <div className="faces">
+    <div className="mt-1.5">
+      <Row className="my-2">
+        <Button size="sm" onClick={() => setQty((q) => Math.max(1, q - 1))}>−</Button>
+        <span className="flex-1 text-center text-[26px] font-bold">{clampedQty}</span>
+        <Button size="sm" onClick={() => setQty((q) => Math.min(max, q + 1))}>+</Button>
+      </Row>
+      <div className="flex gap-2 my-2.5">
         {([2, 3, 4, 5, 6] as BidFace[]).map((f) => (
-          <button
+          <Button
             key={f}
-            className={'btn face' + (face === f ? ' sel' : '')}
+            size="face"
+            selected={face === f}
             onClick={() => setFace(f)}
           >
-            {dieGlyph(f)}
-          </button>
+            <Die value={f} />
+          </Button>
         ))}
       </div>
-      <button
-        className="btn primary"
+      <Button
+        variant="primary"
         disabled={!legal}
         onClick={() => sendAction({ type: 'bid', quantity: clampedQty, face })}
       >
-        Bid {clampedQty} × {dieGlyph(face)}
-      </button>
+        <span className="inline-flex items-center gap-1.5">Bid {clampedQty} × <Die small value={face} /></span>
+      </Button>
       {!legal && view.currentBid && (
-        <p className="hint">That bid does not beat the current one.</p>
+        <Hint>That bid does not beat the current one.</Hint>
       )}
     </div>
   );
@@ -110,68 +112,74 @@ export default function LiarsDiceGame({
   const myTurn = v.turnPlayerId === playerId && !paused;
 
   return (
-    <div className="card">
+    <Card>
       {paused && (
-        <div className="notice">
+        <Notice>
           Game paused — a player disconnected.
           {isHost && ' Send everyone back to the lobby:'}
-        </div>
+        </Notice>
       )}
       {paused && isHost && (
-        <button className="btn primary" onClick={onToLobby}>Back to lobby</button>
+        <Button variant="primary" onClick={onToLobby}>Back to lobby</Button>
       )}
-      <div className="topbar">
-        <span className="chip">Round {v.round}</span>
-        {isHost && <span className="chip">host</span>}
-      </div>
+      <TopBar>
+        <Chip>Round {v.round}</Chip>
+        {isHost && <Chip>host</Chip>}
+      </TopBar>
 
       {v.phase === 'gameOver' ? (
         <>
-          <h1 className="title">Game over</h1>
-          <p className="winner">{who(v.winnerId!)} wins! 🎉</p>
-          <button className="btn primary" onClick={onBackToLobby}>Back to lobby</button>
+          <Title>Game over</Title>
+          <p className="text-2xl text-center my-4">{who(v.winnerId!)} wins! 🎉</p>
+          <Button variant="primary" onClick={onBackToLobby}>Back to lobby</Button>
         </>
       ) : (
         <>
-          <div className="strip">
+          <div className="flex gap-2 overflow-x-auto mb-3">
             {v.players.map((p) => (
-              <div className={'pcard' + (p.id === v.turnPlayerId ? ' turn' : '')} key={p.id}>
-                <div className="pname">{who(p.id)}</div>
-                <div className="pcount">🎲 {p.diceCount}</div>
+              <div
+                className={
+                  'flex-1 min-w-[84px] bg-deep rounded-[10px] p-2 text-center border-2 ' +
+                  (p.id === v.turnPlayerId ? 'border-accent' : 'border-line')
+                }
+                key={p.id}
+              >
+                <div className="text-sm font-semibold">{who(p.id)}</div>
+                <div className="text-[15px] text-muted mt-1">🎲 {p.diceCount}</div>
               </div>
             ))}
           </div>
 
-          <div className="bidline">
+          <div className="text-[18px] text-center my-3 min-h-[26px]">
             {v.currentBid
-              ? `Bid: ${v.currentBid.quantity} × ${dieGlyph(v.currentBid.face)} (${who(v.currentBid.playerId)})`
+              ? <>Bid: {v.currentBid.quantity} × <Die small value={v.currentBid.face} /> ({who(v.currentBid.playerId)})</>
               : 'No bid yet — open the bidding!'}
           </div>
 
-          <div className="lbl">Your dice</div>
-          <div className="dice">
+          <Label>Your dice</Label>
+          <div className="flex gap-2.5 justify-center flex-wrap my-1.5 mb-3">
             {v.yourDice.map((d, i) => (
-              <span className="die" key={i}>{dieGlyph(d)}</span>
+              <Die value={d} key={i} />
             ))}
           </div>
 
           {myTurn ? (
             <>
-              <div className="turnbanner">Your turn!</div>
+              <div className="text-center text-xl font-bold text-accent-soft my-2">Your turn!</div>
               <BidControls view={v} playerId={playerId} sendAction={sendAction} />
               {v.currentBid && (
-                <button className="btn danger" onClick={() => sendAction({ type: 'challenge' })}>
+                <Button variant="danger" className="mt-2.5" onClick={() => sendAction({ type: 'challenge' })}>
                   Liar! (challenge)
-                </button>
+                </Button>
               )}
             </>
           ) : (
-            <p className="hint">Waiting on {who(v.turnPlayerId!)}…</p>
+            <Hint>Waiting on {who(v.turnPlayerId!)}…</Hint>
           )}
 
           {v.lastChallenge && <Reveal result={v.lastChallenge} names={names} />}
         </>
       )}
-    </div>
+    </Card>
   );
 }

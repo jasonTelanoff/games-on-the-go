@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import { GAME_COMPONENTS, GAME_NAMES } from '../games/index.js';
 import LobbyScreen from '../screens/LobbyScreen.js';
+import { Button, Card, Chip, Hint, Row, TopBar } from '../components/ui.js';
 import { DEV_NAMES, DEV_SCENARIOS } from './mocks.js';
 import type { LobbyPlayer } from '../types.js';
 
@@ -37,64 +38,68 @@ export default function DevPlayground() {
 
   return (
     <div id="app">
-      <div className="card">
-        <div className="topbar">
-          <span className="chip">dev playground</span>
-          <span className="hint">?dev — no server needed</span>
-        </div>
-        <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+      <Card>
+        <TopBar>
+          <Chip>dev playground</Chip>
+          <Hint className="my-0">?dev — no server needed</Hint>
+        </TopBar>
+        <Row className="flex-wrap my-2">
           {tabs.map(({ tab: t, label }) => (
-            <button
+            <Button
               key={label}
-              className={'btn small' + (isActive(t) ? ' primary' : '')}
+              size="sm"
+              className="w-auto px-3 text-[15px]"
+              variant={isActive(t) ? 'primary' : 'ghost'}
               onClick={() => { setTab(t); setScenarioIdx(0); }}
             >
               {label}
-            </button>
+            </Button>
           ))}
-        </div>
+        </Row>
 
         {tab.kind === 'game' && (
-          <div className="row" style={{ flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+          <Row className="flex-wrap my-2">
             {(DEV_SCENARIOS[tab.gameId] ?? []).map((s, i) => (
-              <button
+              <Button
                 key={s.label}
-                className={'btn small' + (i === scenarioIdx ? ' primary' : '')}
+                size="sm"
+                className="w-auto px-3 text-[15px]"
+                variant={i === scenarioIdx ? 'primary' : 'ghost'}
                 onClick={() => setScenarioIdx(i)}
               >
                 {s.label}
-              </button>
+              </Button>
             ))}
-          </div>
+          </Row>
         )}
 
         {tab.kind === 'lobby' && (
-          <div className="row" style={{ marginTop: 8 }}>
-            <button className="btn small" onClick={() => setLobbyHost((h) => !h)}>
+          <Row className="my-2">
+            <Button size="sm" className="w-auto px-3 text-[15px]" onClick={() => setLobbyHost((h) => !h)}>
               {lobbyHost ? 'Viewing as host' : 'Viewing as player'} (toggle)
-            </button>
-          </div>
+            </Button>
+          </Row>
         )}
 
         {actions.length > 0 && (
           <>
-            <div className="lbl" style={{ marginTop: 8 }}>Action log (what the UI would send)</div>
-            <div className="hint" style={{ fontFamily: 'monospace' }}>
+            <Hint className="mt-2 font-mono">
+              Action log (what the UI would send):
               {actions.map((a, i) => (
                 <div key={i}>{a}</div>
               ))}
-            </div>
-            <button className="btn small" onClick={() => setActions([])}>Clear</button>
+            </Hint>
+            <Button size="sm" className="w-auto px-3 text-[15px]" onClick={() => setActions([])}>Clear</Button>
           </>
         )}
-      </div>
+      </Card>
 
       {tab.kind === 'game' &&
         (() => {
           const scenarios = DEV_SCENARIOS[tab.gameId] ?? [];
           const s = scenarios[scenarioIdx] ?? scenarios[0];
           const GameScreen = GAME_COMPONENTS[tab.gameId];
-          if (!s || !GameScreen) return <p className="hint">No scenarios for this game yet.</p>;
+          if (!s || !GameScreen) return <Hint>No scenarios for this game yet.</Hint>;
           return (
             <GameScreen
               view={s.view}

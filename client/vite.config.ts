@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -7,7 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   root: here,
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
     // Polling: reliable file watching everywhere (some filesystems and
     // editors don't trigger native watchers). Slightly more CPU, always works.

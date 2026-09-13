@@ -1,4 +1,5 @@
 import type { GameOption, LobbyPlayer, TablePhase } from '../types.js';
+import { Button, Card, Hint, Label, Row, Title } from '../components/ui.js';
 
 interface Props {
   games: GameOption[];
@@ -29,58 +30,63 @@ export default function LobbyScreen({
   const canStart = connectedCount >= 2;
 
   return (
-    <div className="card">
-      <h1 className="title">{gameName}</h1>
+    <Card>
+      <Title>{gameName}</Title>
 
       {tablePhase === 'paused' ? (
         <>
-          <p className="hint">Game paused — a player disconnected.</p>
+          <Hint>Game paused — a player disconnected.</Hint>
           {isHost ? (
-            <button className="btn primary" onClick={onToLobby}>Back to lobby</button>
+            <Button variant="primary" onClick={onToLobby}>Back to lobby</Button>
           ) : (
-            <p className="hint">Waiting for the host…</p>
+            <Hint>Waiting for the host…</Hint>
           )}
         </>
       ) : tablePhase === 'playing' ? (
-        <p className="hint">A game is in progress — you’re in for the next one.</p>
+        <Hint>A game is in progress — you’re in for the next one.</Hint>
       ) : (
         <>
           {isHost && games.length > 1 && (
             <>
-              <div className="lbl">Game</div>
-              <div className="row">
+              <Label>Game</Label>
+              <Row className="my-2">
                 {games.map((g) => (
-                  <button
+                  <Button
                     key={g.id}
-                    className={'btn' + (g.id === gameId ? ' sel' : '')}
+                    selected={g.id === gameId}
                     onClick={() => onSelectGame(g.id)}
                   >
                     {g.name}
-                  </button>
+                  </Button>
                 ))}
-              </div>
+              </Row>
             </>
           )}
 
           {isHost ? (
-            <button className="btn primary" disabled={!canStart} onClick={onStart}>
+            <Button variant="primary" disabled={!canStart} onClick={onStart}>
               {canStart ? 'Start game' : 'Waiting for players…'}
-            </button>
+            </Button>
           ) : (
-            <p className="hint">Waiting for the host to start…</p>
+            <Hint>Waiting for the host to start…</Hint>
           )}
         </>
       )}
 
-      <ul className="plist">
+      <ul className="list-none p-0 my-3">
         {players.map((p) => (
-          <li className={'pitem' + (p.id === playerId ? ' me' : '')} key={p.id}>
+          <li
+            className={
+              'p-3 border-b border-line text-[17px]' + (p.id === playerId ? ' text-accent-soft' : '')
+            }
+            key={p.id}
+          >
             {p.name}
             {p.id === playerId ? ' (you)' : ''}
             {!p.connected ? ' — disconnected' : ''}
           </li>
         ))}
       </ul>
-    </div>
+    </Card>
   );
 }

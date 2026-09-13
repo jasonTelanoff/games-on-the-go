@@ -66,6 +66,15 @@ against hand-built mock states (my turn, their turn, challenge reveal,
 paused, game over…) plus the lobby. Clicks log the action they'd send
 instead of sending it. Scenarios live in `client/src/dev/mocks.ts`.
 
+### UI components
+
+Styling is Tailwind v4 (`@tailwindcss/vite`). The theme tokens — Jason's
+tweaked colors — live in `client/src/index.css` under `@theme`.
+`client/src/components/ui.tsx` holds the shared components (`Button`,
+`Card`, `Chip`, `Notice`, `Field`, `Label`, `Die`…): screens compose
+those instead of hand-rolling class strings. Game-specific layout stays
+in the game's own component file.
+
 ## Design notes
 
 - The engine is pure: `(state, playerId, action, rand?) -> { state, events }`.

@@ -1,17 +1,17 @@
 import { useState } from 'react';
+import { Button, Card, Field, Label, Sub, Title } from '../components/ui.js';
 
 export default function ConnectScreen({ onJoin }: { onJoin: (name: string) => void }) {
   const [name, setName] = useState('');
   const join = () => onJoin(name);
 
   return (
-    <div className="card">
-      <h1 className="title">Party Games</h1>
-      <p className="sub">Your phone is the controller.</p>
+    <Card>
+      <Title>Party Games</Title>
+      <Sub>Your phone is the controller.</Sub>
 
-      <label className="lbl">Your name</label>
-      <input
-        className="field"
+      <Label>Your name</Label>
+      <Field
         placeholder="Name"
         maxLength={20}
         value={name}
@@ -20,7 +20,7 @@ export default function ConnectScreen({ onJoin }: { onJoin: (name: string) => vo
         autoFocus
       />
 
-      <button className="btn primary" onClick={join}>Join game</button>
-    </div>
+      <Button variant="primary" onClick={join}>Join game</Button>
+    </Card>
   );
 }

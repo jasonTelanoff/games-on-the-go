@@ -3,6 +3,7 @@ import type { ClientMessage, ServerMessage } from '../../src/framework.js';
 import type { PlayerView } from '../../src/games/liars-dice/engine.js';
 import ConnectScreen from './screens/ConnectScreen.js';
 import LobbyScreen from './screens/LobbyScreen.js';
+import { Notice } from './components/ui.js';
 import { GAME_COMPONENTS, GAME_NAMES } from './games/index.js';
 import type { AppState } from './types.js';
 
@@ -125,7 +126,7 @@ export default function App() {
 
   return (
     <div id="app">
-      {state.notice && <div className="notice">{state.notice}</div>}
+      {state.notice && <Notice>{state.notice}</Notice>}
 
       {state.screen === 'connect' && <ConnectScreen onJoin={join} />}
 
