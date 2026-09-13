@@ -203,18 +203,27 @@ export async function startServer(port: number): Promise<RunningServer> {
 }
 
 // Run directly: `node dist/server/index.js` (or `npm run serve`).
+// Under `npm run dev:server`, point at the Vite dev server instead.
 const invokedAs = process.argv[1] ? path.resolve(process.argv[1]) : null;
 if (invokedAs && fileURLToPath(import.meta.url) === invokedAs) {
   const port = Number(process.env.PORT ?? 8080);
   const srv = await startServer(port);
-  console.log('party-games server running!');
-  console.log(`  On this device: http://localhost:${srv.port}`);
   const lans = lanUrls(srv.port);
-  if (lans.length > 0) {
-    console.log('  On your network, players open:');
-    for (const u of lans) console.log(`    ${u}`);
+  if (process.env.npm_lifecycle_event === 'dev:server') {
+    console.log('party-games server running (dev).');
+    console.log('  The page is on the Vite server, NOT this port:');
+    console.log('    http://localhost:5173        (play, hot reload)');
+    console.log('    http://localhost:5173/?dev   (UI playground)');
+    for (const u of lans) console.log(`    on your network: ${u.replace(`:${srv.port}`, ':5173')}`);
   } else {
-    console.log('  No network address found — players can only join on this device.');
+    console.log('party-games server running!');
+    console.log(`  On this device: http://localhost:${srv.port}`);
+    if (lans.length > 0) {
+      console.log('  On your network, players open:');
+      for (const u of lans) console.log(`    ${u}`);
+    } else {
+      console.log('  No network address found — players can only join on this device.');
+    }
+    console.log('  Whoever joins first is the host.');
   }
-  console.log('  Whoever joins first is the host.');
 }

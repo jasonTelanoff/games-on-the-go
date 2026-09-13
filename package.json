@@ -27,7 +27,7 @@
     "test": "npm run build:server && node --test \"dist/**/*.test.js\"",
     "dev": "concurrently -k -n server,client \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "tsx watch src/server/index.ts",
-    "dev:client": "vite --config client/vite.config.ts",
+    "dev:client": "vite --config client/vite.config.ts --host",
     "typecheck:client": "tsc --noEmit -p client/tsconfig.json"
   },
   "type": "module",

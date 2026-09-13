@@ -9,6 +9,9 @@ export default defineConfig({
   root: here,
   plugins: [react()],
   server: {
+    // Polling: reliable file watching everywhere (some filesystems and
+    // editors don't trigger native watchers). Slightly more CPU, always works.
+    watch: { usePolling: true, interval: 250 },
     proxy: {
       // In dev the page comes from Vite, but the game server still runs
       // on :8080 — forward websocket traffic to it.
