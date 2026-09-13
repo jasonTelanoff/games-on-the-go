@@ -81,11 +81,12 @@ export const LIARS_DICE_SCENARIOS: DevScenario[] = [
       turnPlayerId: null,
       currentBid: { playerId: CAT, quantity: 5, face: 6 },
       lastChallenge: {
+        kind: 'challenge',
         challengerId: ANA,
         bid: { playerId: CAT, quantity: 5, face: 6 },
         actualCount: 2,
         bidStood: false,
-        loserId: CAT,
+        loserIds: [CAT],
         revealed: [
           { playerId: ANA, dice: [3, 1, 5, 2, 6] },
           { playerId: BEN, dice: [6, 6, 2, 4, 3] },
@@ -103,11 +104,12 @@ export const LIARS_DICE_SCENARIOS: DevScenario[] = [
       turnPlayerId: null,
       currentBid: { playerId: BEN, quantity: 3, face: 2 },
       lastChallenge: {
+        kind: 'challenge',
         challengerId: CAT,
         bid: { playerId: BEN, quantity: 3, face: 2 },
         actualCount: 4,
         bidStood: true,
-        loserId: CAT,
+        loserIds: [CAT],
         revealed: [
           { playerId: ANA, dice: [2, 1, 5, 2, 6] },
           { playerId: BEN, dice: [2, 6, 2, 4, 3] },
@@ -132,11 +134,12 @@ export const LIARS_DICE_SCENARIOS: DevScenario[] = [
       round: 6,
       currentBid: { playerId: ANA, quantity: 3, face: 4 },
       lastChallenge: {
+        kind: 'challenge',
         challengerId: BEN,
         bid: { playerId: CAT, quantity: 2, face: 5 },
         actualCount: 0,
         bidStood: false,
-        loserId: CAT,
+        loserIds: [CAT],
         revealed: [
           { playerId: ANA, dice: [3, 1, 5, 2, 6] },
           { playerId: BEN, dice: [6, 6, 2, 4] },

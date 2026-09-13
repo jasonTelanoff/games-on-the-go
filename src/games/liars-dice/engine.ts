@@ -3,12 +3,18 @@
  *
  * Rules (classic):
  * - Each player starts with 5 hidden dice. Ones are wild.
- * - On your turn: raise the bid, or challenge the current bid ("liar!").
+ * - On your turn: raise the bid, challenge the current bid ("liar!"),
+ *   or call it exactly ("exact" / spot on).
  * - A bid is quantity x face (face 2-6). A raise must be more dice, or the
  *   same number of dice with a higher face.
  * - On challenge, all dice are revealed. If at least `quantity` dice show
  *   the bid face (ones count as any face), the bid stood and the challenger
  *   loses a die; otherwise the bidder loses a die.
+ * - On an exact call, all dice are revealed. If the count matches the bid
+ *   exactly, everyone except the caller loses a die; otherwise the caller
+ *   loses a die. The caller starts the next round.
+ * - After any call, the table holds on a reveal screen until someone taps
+ *   Continue — then the loser(s) drop dice and a fresh round is dealt.
  * - The loser starts the next round with fresh dice. Zero dice = eliminated.
  * - Last player with dice wins.
  *
@@ -32,14 +38,21 @@ export interface PlayerState {
 }
 
 export interface ChallengeResult {
+  /** 'challenge' = "Liar!", 'exact' = "Spot on!". */
+  kind: 'challenge' | 'exact';
+  /** Who called the challenge / exact. */
   challengerId: string;
   bid: Bid;
   /** Dice showing the bid face, counting ones as wild. */
   actualCount: number;
-  /** True when actualCount >= bid quantity: the challenger loses the die. */
+  /**
+   * True when the call succeeded: challenge → actualCount >= quantity
+   * (the bid stood); exact → actualCount === quantity (spot on).
+   */
   bidStood: boolean;
-  loserId: string;
-  /** Every player's dice, revealed by the challenge. Shown in the UI. */
+  /** Every player who loses a die. Challenges have exactly one. */
+  loserIds: string[];
+  /** Every player's dice, revealed by the call. Shown in the UI. */
   revealed: { playerId: string; dice: number[] }[];
 }
 
@@ -62,6 +75,7 @@ export interface GameState {
 export type Action =
   | { type: 'bid'; quantity: number; face: BidFace }
   | { type: 'challenge' }
+  | { type: 'exact' }
   | { type: 'continue' };
 
 export type GameEvent =
@@ -178,27 +192,49 @@ export function applyAction(
     throw new IllegalActionError('Nothing to continue');
   }
 
-  // --- challenge: reveal the dice and hold for Continue. The loser only
-  // loses their die when the table continues to the next round. ---
+  // --- challenge / exact: reveal the dice and hold for Continue. The
+  // losers only drop their dice when the table continues to the next round.
+  // "Liar!": bid stood (actual >= quantity) → challenger loses a die,
+  //   else the bidder loses one.
+  // "Exact" (spot on): actual === quantity → everyone EXCEPT the caller
+  //   loses a die, else the caller loses one. ---
   const bid = state.currentBid;
   if (!bid) {
-    throw new IllegalActionError('No bid to challenge');
+    throw new IllegalActionError(
+      action.type === 'exact' ? 'No bid to call exact on' : 'No bid to challenge',
+    );
   }
 
   const allDice = state.players.flatMap((p) => p.dice);
   const actualCount = countMatching(allDice, bid.face);
-  const bidStood = actualCount >= bid.quantity;
-  const loserId = bidStood ? playerId : bid.playerId;
   const revealed = state.players.map((p) => ({ playerId: p.id, dice: [...p.dice] }));
 
-  const result: ChallengeResult = {
-    challengerId: playerId,
-    bid,
-    actualCount,
-    bidStood,
-    loserId,
-    revealed,
-  };
+  let result: ChallengeResult;
+  if (action.type === 'exact') {
+    const spotOn = actualCount === bid.quantity;
+    result = {
+      kind: 'exact',
+      challengerId: playerId,
+      bid,
+      actualCount,
+      bidStood: spotOn,
+      loserIds: spotOn
+        ? state.players.map((p) => p.id).filter((id) => id !== playerId)
+        : [playerId],
+      revealed,
+    };
+  } else {
+    const bidStood = actualCount >= bid.quantity;
+    result = {
+      kind: 'challenge',
+      challengerId: playerId,
+      bid,
+      actualCount,
+      bidStood,
+      loserIds: [bidStood ? playerId : bid.playerId],
+      revealed,
+    };
+  }
   const next: GameState = {
     ...state,
     lastChallenge: result,
@@ -208,28 +244,32 @@ export function applyAction(
 }
 
 /**
- * Resolves the held challenge: the loser drops a die (and may be
- * eliminated), then everyone re-rolls and the loser starts the new round.
+ * Resolves the held call: every loser drops a die (and may be eliminated),
+ * then everyone re-rolls. The challenge loser starts — or the exact caller.
  */
 function continueFromReveal(state: GameState, rand: Rand): ActionResult {
   const result = state.lastChallenge;
   if (!result) {
     throw new IllegalActionError('No challenge to continue from');
   }
-  const loserId = result.loserId;
-  const loserPos = state.players.findIndex((p) => p.id === loserId);
+  const loserSet = new Set(result.loserIds);
+  const starterId = result.kind === 'exact' ? result.challengerId : result.loserIds[0];
+  const starterPos = state.players.findIndex((p) => p.id === starterId);
 
   let players = state.players.map((p) =>
-    p.id === loserId ? { ...p, dice: p.dice.slice(0, p.dice.length - 1) } : p,
+    loserSet.has(p.id) ? { ...p, dice: p.dice.slice(0, p.dice.length - 1) } : p,
   );
-  const eliminated = players.find((p) => p.id === loserId && p.dice.length === 0) ?? null;
-  if (eliminated) {
-    players = players.filter((p) => p.id !== eliminated.id);
+  const eliminatedIds = players
+    .filter((p) => loserSet.has(p.id) && p.dice.length === 0)
+    .map((p) => p.id);
+  if (eliminatedIds.length > 0) {
+    const gone = new Set(eliminatedIds);
+    players = players.filter((p) => !gone.has(p.id));
   }
 
   const events: GameEvent[] = [];
-  if (eliminated) {
-    events.push({ type: 'playerEliminated', playerId: eliminated.id });
+  for (const id of eliminatedIds) {
+    events.push({ type: 'playerEliminated', playerId: id });
   }
 
   if (players.length === 1) {
@@ -247,14 +287,14 @@ function continueFromReveal(state: GameState, rand: Rand): ActionResult {
     return { state: done, events };
   }
 
-  // Fresh round: everyone re-rolls; the challenge loser starts (or, if they
-  // were eliminated, the seat after them — both are `loserPos % len`).
+  // Fresh round: everyone re-rolls; the starter opens (or, if they were
+  // eliminated, the seat after them — both are `starterPos % len`).
   const next: GameState = {
     players: players.map((p) => ({
       ...p,
       dice: Array.from({ length: p.dice.length }, () => rollDie(rand)),
     })),
-    turnIndex: loserPos % players.length,
+    turnIndex: starterPos % players.length,
     currentBid: null,
     bidHistory: [],
     round: state.round + 1,

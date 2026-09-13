@@ -80,12 +80,23 @@ function RevealScreen({ result, names, playerId, sendAction }: {
 }) {
   const who = (id: string) => names[id] ?? '???';
   const [continuing, setContinuing] = useState(false);
-  const loserDice = result.revealed.find((r) => r.playerId === result.loserId)?.dice.length ?? 0;
-  const eliminated = loserDice <= 1;
+  const loserSet = new Set(result.loserIds);
+  const eliminatedIds = result.revealed
+    .filter((r) => loserSet.has(r.playerId) && r.dice.length <= 1)
+    .map((r) => r.playerId);
+  const isExact = result.kind === 'exact';
+  const resultText = isExact
+    ? result.bidStood
+      ? `Spot on! Everyone but ${who(result.challengerId)} loses a die.`
+      : `Not exact — ${who(result.challengerId)} loses a die.`
+    : result.bidStood
+      ? `The bid stood — ${who(result.challengerId)} loses a die.`
+      : `${who(result.bid.playerId)} was lying — ${who(result.loserIds[0])} loses a die.`;
   return (
     <>
       <div className="text-center py-4">
-        <div className="text-[15px] text-muted mb-2">{who(result.challengerId)} called Liar!</div>
+        <div className="text-[15px] text-muted mb-2">
+          {who(result.challengerId)} called {isExact ? 'Exact!' : 'Liar!'}</div>
         <div className="text-[34px] font-bold tracking-tight leading-none inline-flex items-center gap-2">
           {result.bid.quantity} × <Die value={result.bid.face} />
         </div>
@@ -111,10 +122,9 @@ function RevealScreen({ result, names, playerId, sendAction }: {
       ))}
 
       <div className="my-4 rounded-xl border border-line px-4 py-3 text-[15px] text-center">
-        {result.bidStood
-          ? `The bid stood — ${who(result.challengerId)} loses a die.`
-          : `${who(result.bid.playerId)} was lying — ${who(result.loserId)} loses a die.`}
-        {eliminated && ` ${who(result.loserId)} is out!`}
+        {resultText}
+        {eliminatedIds.length > 0 &&
+          ` ${eliminatedIds.map(who).join(', ')} ${eliminatedIds.length === 1 ? 'is' : 'are'} out!`}
       </div>
 
       <StickyBar>
@@ -180,6 +190,9 @@ function TurnControls({ view, playerId, sendAction }: {
       {!chosen && (
         <Hint className="text-center">Pick a quantity and a face.</Hint>
       )}
+      {view.currentBid && (
+        <Hint className="text-center">Exact: nail the count and everyone else loses a die — miss, and you lose one.</Hint>
+      )}
 
       <StickyBar>
         <div className="flex-[2]">
@@ -198,11 +211,18 @@ function TurnControls({ view, playerId, sendAction }: {
           </Button>
         </div>
         {view.currentBid && (
-          <div className="flex-1">
-            <Button variant="danger" onClick={() => sendAction({ type: 'challenge' })}>
-              Liar!
-            </Button>
-          </div>
+          <>
+            <div className="flex-1">
+              <Button variant="danger" onClick={() => sendAction({ type: 'challenge' })}>
+                Liar!
+              </Button>
+            </div>
+            <div className="flex-1">
+              <Button variant="secondary" onClick={() => sendAction({ type: 'exact' })}>
+                Exact
+              </Button>
+            </div>
+          </>
         )}
       </StickyBar>
     </>

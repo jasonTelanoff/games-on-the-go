@@ -89,12 +89,25 @@ export async function startServer(port: number): Promise<RunningServer> {
       }
       case 'challengeResolved': {
         const r = e.result as
-          | { bidStood: boolean; loserId: string; actualCount: number; bid: { face: number } }
+          | {
+              kind: string;
+              challengerId: string;
+              bidStood: boolean;
+              loserIds: string[];
+              actualCount: number;
+              bid: { quantity: number; face: number };
+            }
           | undefined;
         if (!r) return null;
+        const losers = r.loserIds.map(nameOf).join(', ');
+        if (r.kind === 'exact') {
+          return r.bidStood
+            ? `🎯 ${nameOf(r.challengerId)} called it exactly (${r.actualCount} × ${r.bid.face}s) — ${losers} lose a die`
+            : `🎯 ${nameOf(r.challengerId)} missed exact (${r.actualCount} × ${r.bid.face}s vs bid ${r.bid.quantity}) — loses a die`;
+        }
         return r.bidStood
-          ? `🛡 bid stood (${r.actualCount} × ${r.bid.face}s) — ${nameOf(r.loserId)} loses a die`
-          : `⚔ only ${r.actualCount} × ${r.bid.face}s — ${nameOf(r.loserId)} was lying, loses a die`;
+          ? `🛡 bid stood (${r.actualCount} × ${r.bid.face}s) — ${losers} loses a die`
+          : `⚔ only ${r.actualCount} × ${r.bid.face}s — ${losers} was lying, loses a die`;
       }
       case 'playerEliminated':
         return typeof e.playerId === 'string' ? `💀 ${nameOf(e.playerId)} is out` : null;

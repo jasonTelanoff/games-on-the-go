@@ -97,7 +97,7 @@ test('challenge: bid stands (ones wild) -> reveal holds, then challenger loses a
   const result = challengeResult(events);
   assert.equal(result.actualCount, 4);
   assert.equal(result.bidStood, true);
-  assert.equal(result.loserId, 'b');
+  assert.deepEqual(result.loserIds, ['b']);
 
   // Reveal holds: no dice removed yet, round not advanced, no bids allowed.
   assert.equal(s2.phase, 'reveal');
@@ -126,7 +126,7 @@ test('challenge: bid fails -> bidder loses a die and starts', () => {
   const result = challengeResult(events);
   assert.equal(result.actualCount, 0);
   assert.equal(result.bidStood, false);
-  assert.equal(result.loserId, 'a');
+  assert.deepEqual(result.loserIds, ['a']);
   assert.equal(s2.phase, 'reveal');
 
   const { state: s3 } = applyAction(s2, 'b', { type: 'continue' }, rigged([2]));
@@ -163,6 +163,47 @@ test('continue: only players in the game can continue, and only once', () => {
   const s3 = applyAction(s2, 'b', { type: 'continue' }, rigged([3])).state;
   assert.equal(s3.phase, 'bidding');
   assert.throws(() => applyAction(s3, 'a', { type: 'continue' }), IllegalActionError);
+});
+
+test('exact: spot on -> everyone except the caller loses a die, caller starts', () => {
+  // a: 4,4,2,3,5  b: 4,1,2,3,6  c: 2,2,3,5,6 -> exactly four 4s with the wild one.
+  const s0 = createGame(['a', 'b', 'c'], rigged([4, 4, 2, 3, 5, 4, 1, 2, 3, 6, 2, 2, 3, 5, 6]));
+  const s1 = applyAction(s0, 'a', bid('a', 4, 4)).state;
+  const { state: s2, events } = applyAction(s1, 'b', { type: 'exact' });
+
+  const result = challengeResult(events);
+  assert.equal(result.kind, 'exact');
+  assert.equal(result.actualCount, 4);
+  assert.equal(result.bidStood, true);
+  assert.deepEqual(result.loserIds, ['a', 'c']);
+  assert.equal(s2.phase, 'reveal');
+
+  const { state: s3 } = applyAction(s2, 'c', { type: 'continue' }, rigged([2]));
+  assert.equal(s3.players.find((p) => p.id === 'a')!.dice.length, 4);
+  assert.equal(s3.players.find((p) => p.id === 'b')!.dice.length, 5);
+  assert.equal(s3.players.find((p) => p.id === 'c')!.dice.length, 4);
+  assert.equal(currentPlayerId(s3), 'b'); // caller starts
+});
+
+test('exact: missed -> caller loses a die and starts', () => {
+  // Four 4s out there, so calling exact on 3x4 misses.
+  const s0 = createGame(['a', 'b'], rigged([4, 4, 2, 3, 5, 4, 1, 2, 3, 6]));
+  const s1 = applyAction(s0, 'a', bid('a', 3, 4)).state;
+  const { state: s2, events } = applyAction(s1, 'b', { type: 'exact' });
+
+  const result = challengeResult(events);
+  assert.equal(result.kind, 'exact');
+  assert.equal(result.bidStood, false);
+  assert.deepEqual(result.loserIds, ['b']);
+
+  const { state: s3 } = applyAction(s2, 'a', { type: 'continue' }, rigged([2]));
+  assert.equal(s3.players.find((p) => p.id === 'b')!.dice.length, 4);
+  assert.equal(currentPlayerId(s3), 'b');
+});
+
+test('exact with no bid on the table throws', () => {
+  const s = createGame(['a', 'b'], rigged([3]));
+  assert.throws(() => applyAction(s, 'a', { type: 'exact' }), IllegalActionError);
 });
 
 test('bid history accumulates during the round and resets on continue', () => {
